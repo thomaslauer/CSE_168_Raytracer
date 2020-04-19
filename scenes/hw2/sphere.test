@@ -1,4 +1,4 @@
-size 6400 4800
+size 640 480
 integrator direct
 lightsamples 25
 lightstratify on
