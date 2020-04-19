@@ -7,6 +7,8 @@
 #include <glm/glm.hpp>
 #include <embree3/rtcore.h>
 
+class Integrator;
+
 struct camera_t {
     glm::vec3 origin;
     glm::vec3 imagePlaneTopLeft;
@@ -20,6 +22,7 @@ struct material_t {
     float shininess;
     glm::vec3 emission;
     glm::vec3 ambient;
+    bool light;
 };
 
 struct directionalLight_t {
@@ -31,6 +34,13 @@ struct pointLight_t {
     glm::vec3 point;
     glm::vec3 brightness;
     glm::vec3 attenuation;
+};
+
+struct quadLight_t {
+    glm::vec3 a;
+    glm::vec3 ab;
+    glm::vec3 ac;
+    glm::vec3 intensity;
 };
 
 class Scene {
@@ -46,7 +56,14 @@ public:
     std::vector<material_t> triMaterials;
     std::vector<directionalLight_t> directionalLights;
     std::vector<pointLight_t> pointLights;
+    std::vector<quadLight_t> quadLights;
+
+    Integrator* integrator;
+
     RTCScene embreeScene;
+
+    int lightsamples;
+    bool lightstratify;
 
     bool castRay(
         glm::vec3 origin,

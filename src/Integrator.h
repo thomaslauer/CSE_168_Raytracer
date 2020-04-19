@@ -1,6 +1,9 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
+
+#include <boost/random.hpp>
 
 #include "Scene.h"
 
@@ -39,4 +42,31 @@ public:
 
     virtual glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);
 
+};
+
+class AnalyticDirectIntegrator : public Integrator {
+private:
+    float calculateSubtendedAngle(glm::vec3 r, glm::vec3 p1, glm::vec3 p2);
+    glm::vec3 calculateSubtendedAngleNormal(glm::vec3 r, glm::vec3 p1, glm::vec3 p2);
+public:
+    virtual glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);
+};
+
+class MonteCarloDirectIntegrator : public Integrator {
+private:
+    glm::vec3 brdf(material_t mat);
+    float occlusion(glm::vec3 origin, glm::vec3 target);
+    float geometry(
+        glm::vec3 origin,
+        glm::vec3 direction,
+        glm::vec3 surfaceNormal,
+        glm::vec3 lightDirection,
+        glm::vec3 lightNormal);
+
+    boost::random::mt19937 rng;
+    boost::random::uniform_real_distribution<float> gen;
+
+public:
+    MonteCarloDirectIntegrator();
+    virtual glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);
 };

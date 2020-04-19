@@ -23,19 +23,23 @@ endif()
 
 find_package(embree 3.0 REQUIRED)
 
+find_package(Boost 1.50 REQUIRED COMPONENTS random)
+
 set(LIB_SOURCES
     src/Engine.cpp
     src/Scene.cpp
     src/SceneLoader.cpp
     src/RenderPool.cpp
     src/RayTracerIntegrator.cpp
+    src/AnalyticDirectIntegrator.cpp
+    src/MonteCarloDirectIntegrator.cpp
     src/lodepng/lodepng.cpp
 )
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 include_directories(src/ ${EMBREE_INCLUDE_DIRS})
 add_library(rt168_lib ${LIB_SOURCES})
 set_target_properties(rt168_lib PROPERTIES OUTPUT_NAME rt168)
-target_link_libraries(rt168_lib ${ARCH_LIBRARIES} ${EMBREE_LIBRARY})
+target_link_libraries(rt168_lib ${ARCH_LIBRARIES} ${EMBREE_LIBRARY} ${Boost_LIBRARIES})
 
 set(CLI_SOURCES
     src/CliMain.cpp

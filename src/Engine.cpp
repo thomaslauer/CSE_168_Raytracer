@@ -98,8 +98,7 @@ void render(const std::string& sceneFilePath)
     Scene* scene;
     loadScene(sceneFilePath, embreeDevice, &scene);
 
-    RayTracerIntegrator integrator;
-    integrator.setScene(scene);
+    Integrator* integrator = scene->integrator;
 
     std::cout << "Preparing render jobs..." << std::endl;
 
@@ -126,7 +125,7 @@ void render(const std::string& sceneFilePath)
 
     TimePoint startTime = Clock::now();
     {
-        RenderPool pool(scene, &integrator, numThreads, jobs);
+        RenderPool pool(scene, integrator, numThreads, jobs);
 
         size_t numCompletedJobs = 0;
         while (numCompletedJobs < jobs.size()) {

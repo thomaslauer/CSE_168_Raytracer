@@ -1,5 +1,6 @@
 #include <algorithm>
 
+#include <iostream>
 #include <glm/glm.hpp>
 
 #include "Integrator.h"
@@ -68,7 +69,7 @@ glm::vec3 RayTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, i
 
         if (depth < _scene->maxDepth) {
             outputColor +=
-                hitMaterial.specular
+                hitMaterial.emission + hitMaterial.specular
                 * traceRay(hitPosition, glm::reflect(direction, hitNormal), depth + 1);
         }
     }

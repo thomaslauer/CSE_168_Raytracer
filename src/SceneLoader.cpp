@@ -39,14 +39,21 @@ private:
     std::vector<glm::mat4> _transformStack;
     std::vector<directionalLight_t> _directionalLights;
     std::vector<pointLight_t> _pointLights;
+    std::vector<quadLight_t> _quadLights;
     glm::vec3 _curAttenuation = glm::vec3(1.0f, 0.0f, 0.0f);
     material_t _curMaterial = {
         glm::vec3(0.0f),  // diffuse
         glm::vec3(0.0f),  // specular
         1.0f,  // shininess
         glm::vec3(0.0f),  // emission
-        glm::vec3(0.2f, 0.2f, 0.2f)  // ambient
+        glm::vec3(0.2f, 0.2f, 0.2f),  // ambient
+        false             // light
     };
+
+    std::string _integratorType = "raytracer";
+    int _lightsamples = 1;
+
+    void quadLightToTriangles();
 
 public:
 
@@ -187,6 +194,16 @@ void SceneLoader::executeCommand(
 
         _pointLights.push_back(light);
 
+    } else if (command == "quadLight") {
+
+        quadLight_t light;
+        light.a = loadVec3(arguments, 0);
+        light.ab = loadVec3(arguments, 3);
+        light.ac = loadVec3(arguments, 6);
+        light.intensity = loadVec3(arguments, 9);
+
+        _quadLights.push_back(light);
+
     } else if (command == "attenuation") {
 
         _curAttenuation = loadVec3(arguments);
@@ -210,6 +227,14 @@ void SceneLoader::executeCommand(
     } else if (command == "emission") {
 
         _curMaterial.emission = loadVec3(arguments);
+
+    } else if (command == "integrator") {
+
+        _integratorType = arguments[0];
+
+    } else if (command == "lightsamples") {
+
+        _lightsamples = std::stoi(arguments[0]);
 
     } else {
 
@@ -239,6 +264,31 @@ void SceneLoader::loadSceneData(const std::string& filePath)
         }
 
         executeCommand(command, arguments);
+    }
+}
+
+void SceneLoader::quadLightToTriangles() {
+    for (auto light : _quadLights) {
+        std::cout << "hello world" << std::endl;
+        int offset = _vertices.size();
+        _vertices.push_back(light.a);
+        _vertices.push_back(light.a + light.ab);
+        _vertices.push_back(light.a + light.ab + light.ac);
+        _vertices.push_back(light.a + light.ac);
+
+        _indices.push_back(glm::uvec3(0, 1, 2) + glm::uvec3(offset));
+        _indices.push_back(glm::uvec3(0, 2, 3) + glm::uvec3(offset));
+
+        material_t mat;
+        mat.ambient = glm::vec3(0);
+        mat.diffuse = glm::vec3(1);
+        mat.specular = glm::vec3(0);
+        mat.emission = light.intensity;
+        mat.shininess = 1;
+        mat.light = true;
+
+        _triMaterials.push_back(mat);
+        _triMaterials.push_back(mat);
     }
 }
 
@@ -315,6 +365,23 @@ RTCScene SceneLoader::createEmbreeScene()
     return embreeScene;
 }
 
+Integrator* SceneLoader::createIntegrator()
+{
+    Integrator* it;
+
+    if (_integratorType == "raytracer") {
+        it = new RayTracerIntegrator();
+    } else if (_integratorType == "direct") {
+        it = new MonteCarloDirectIntegrator();
+    } else if (_integratorType == "analyticdirect") {
+        it = new AnalyticDirectIntegrator();
+    } else {
+        it = new RayTracerIntegrator();
+    }
+
+    return it;
+}
+
 Scene* SceneLoader::commitSceneData()
 {
     float aspectRatio = static_cast<float>(_imageSize.x) / _imageSize.y;
@@ -337,6 +404,8 @@ Scene* SceneLoader::commitSceneData()
         sphereNormalTransforms.push_back(glm::inverseTranspose(glm::mat3(_sphereTransforms[i])));
     }
 
+    quadLightToTriangles();
+
     Scene* scene = new Scene();
     scene->imageSize = _imageSize;
     scene->maxDepth = _maxDepth;
@@ -347,7 +416,11 @@ Scene* SceneLoader::commitSceneData()
     scene->triMaterials = std::move(_triMaterials);
     scene->directionalLights = std::move(_directionalLights);
     scene->pointLights = std::move(_pointLights);
+    scene->quadLights = _quadLights;
     scene->embreeScene = createEmbreeScene();
+    scene->integrator = createIntegrator();
+    scene->integrator->setScene(scene);
+    scene->lightsamples = _lightsamples;
 
     return scene;
 }

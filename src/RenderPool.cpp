@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+#include <boost/random.hpp>
+
 #include "Scene.h"
 #include "Integrator.h"
 
@@ -15,6 +17,8 @@ RenderJob::RenderJob(glm::uvec2 startPixel, glm::uvec2 windowSize)
       windowSize(windowSize),
       _result(windowSize.x * windowSize.y)
 {
+    rng = boost::random::mt19937();
+    gen = boost::random::uniform_real_distribution<float>(0.0f, 1.0f);
 }
 
 void RenderJob::render(Scene* scene, Integrator* integrator)
