@@ -61,7 +61,6 @@ private:
         glm::vec3 surfaceNormal);
     float occlusion(glm::vec3 origin, glm::vec3 target);
     float geometry(
-        glm::vec3 origin,
         glm::vec3 direction,
         glm::vec3 surfaceNormal,
         glm::vec3 lightDirection,

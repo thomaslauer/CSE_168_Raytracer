@@ -49,7 +49,7 @@ glm::vec3 MonteCarloDirectIntegrator::traceRay(glm::vec3 origin, glm::vec3 direc
 
                 glm::vec3 F = brdf(hitMaterial, w_in, w_out, hitNormal);
                 float V = occlusion(hitPosition, lightPosition);
-                float G = geometry(origin, hitPosition, hitNormal, lightPosition, lightNormal);
+                float G = geometry(hitPosition, hitNormal, lightPosition, lightNormal);
 
                 outputColor += lightArea * light.intensity * F * V * G / (float) _scene->lightSamples;
                 //outputColor += brdf(hitMaterial) * V;
@@ -61,7 +61,6 @@ glm::vec3 MonteCarloDirectIntegrator::traceRay(glm::vec3 origin, glm::vec3 direc
 }
 
 float MonteCarloDirectIntegrator::geometry(
-    glm::vec3 origin,
     glm::vec3 surfacePoint,
     glm::vec3 surfaceNormal,
     glm::vec3 lightPoint,

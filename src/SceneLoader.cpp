@@ -277,7 +277,6 @@ void SceneLoader::loadSceneData(const std::string& filePath)
 
 void SceneLoader::quadLightToTriangles() {
     for (auto light : _quadLights) {
-        std::cout << "hello world" << std::endl;
         int offset = _vertices.size();
         _vertices.push_back(light.a);
         _vertices.push_back(light.a + light.ab);
