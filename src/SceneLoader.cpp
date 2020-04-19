@@ -51,7 +51,8 @@ private:
     };
 
     std::string _integratorType = "raytracer";
-    int _lightsamples = 1;
+    int _lightSamples = 1;
+    bool _lightStratify = false;
 
     void quadLightToTriangles();
 
@@ -234,7 +235,14 @@ void SceneLoader::executeCommand(
 
     } else if (command == "lightsamples") {
 
-        _lightsamples = std::stoi(arguments[0]);
+        _lightSamples = std::stoi(arguments[0]);
+
+    } else if (command == "lightstratify") {
+
+        if (arguments[0] == "on")
+            _lightStratify = true;
+        else
+            _lightStratify = false;
 
     } else {
 
@@ -420,7 +428,9 @@ Scene* SceneLoader::commitSceneData()
     scene->embreeScene = createEmbreeScene();
     scene->integrator = createIntegrator();
     scene->integrator->setScene(scene);
-    scene->lightsamples = _lightsamples;
+    scene->lightSamples = _lightSamples;
+    scene->lightStratify = _lightStratify;
+    scene->stratifyGridSize = glm::sqrt(_lightSamples);
 
     return scene;
 }

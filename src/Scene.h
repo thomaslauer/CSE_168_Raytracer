@@ -62,8 +62,9 @@ public:
 
     RTCScene embreeScene;
 
-    int lightsamples;
-    bool lightstratify;
+    int lightSamples;
+    bool lightStratify;
+    int stratifyGridSize;
 
     bool castRay(
         glm::vec3 origin,

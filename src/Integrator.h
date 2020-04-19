@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-#include <boost/random.hpp>
+#include <random>
 
 #include "Scene.h"
 
@@ -54,7 +54,11 @@ public:
 
 class MonteCarloDirectIntegrator : public Integrator {
 private:
-    glm::vec3 brdf(material_t mat);
+    glm::vec3 brdf(
+        material_t mat,
+        glm::vec3 w_in,
+        glm::vec3 w_out,
+        glm::vec3 surfaceNormal);
     float occlusion(glm::vec3 origin, glm::vec3 target);
     float geometry(
         glm::vec3 origin,
@@ -63,8 +67,8 @@ private:
         glm::vec3 lightDirection,
         glm::vec3 lightNormal);
 
-    boost::random::mt19937 rng;
-    boost::random::uniform_real_distribution<float> gen;
+    static thread_local std::default_random_engine rng;
+    std::uniform_real_distribution<float> gen;
 
 public:
     MonteCarloDirectIntegrator();

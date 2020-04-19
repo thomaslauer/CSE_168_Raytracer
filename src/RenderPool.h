@@ -4,7 +4,6 @@
 #include <condition_variable>
 
 #include <glm/glm.hpp>
-#include <boost/random.hpp>
 
 #include "Scene.h"
 #include "Integrator.h"
@@ -19,9 +18,6 @@ public:
 private:
 
     std::vector<glm::vec3> _result;
-
-    boost::random::mt19937 rng;
-    boost::random::uniform_real_distribution<float> gen;
 
 public:
 
