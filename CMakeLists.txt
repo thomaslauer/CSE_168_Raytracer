@@ -16,7 +16,7 @@ else()
     elseif (UNIX)
         set(embree_DIR "/usr/lib64/cmake/embree-3.8.0/" CACHE PATH "Embree Directory")
     endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function -Wno-error=unused-parameter")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function -Wno-error=unused-parameter")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
     set(ARCH_LIBRARIES "pthread")
 endif()
@@ -28,13 +28,13 @@ set(LIB_SOURCES
     src/Scene.cpp
     src/SceneLoader.cpp
     src/RenderPool.cpp
-    src/integrators/RayTracerIntegrator.cpp
-    src/integrators/AnalyticDirectIntegrator.cpp
-    src/integrators/MonteCarloDirectIntegrator.cpp
+    src/RayTracerIntegrator.cpp
+    src/AnalyticDirectIntegrator.cpp
+    src/MonteCarloDirectIntegrator.cpp
     src/lodepng/lodepng.cpp
 )
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
-include_directories(src/ src/integrators ${EMBREE_INCLUDE_DIRS})
+include_directories(src/ ${EMBREE_INCLUDE_DIRS})
 add_library(rt168_lib ${LIB_SOURCES})
 set_target_properties(rt168_lib PROPERTIES OUTPUT_NAME rt168)
 target_link_libraries(rt168_lib ${ARCH_LIBRARIES} ${EMBREE_LIBRARY})
