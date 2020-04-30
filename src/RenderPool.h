@@ -2,6 +2,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <random>
 
 #include <glm/glm.hpp>
 
@@ -16,6 +17,10 @@ public:
     const glm::uvec2 windowSize;
 
 private:
+
+    // random number generation
+    static thread_local std::default_random_engine rng;
+    std::uniform_real_distribution<float> gen;
 
     std::vector<glm::vec3> _result;
 

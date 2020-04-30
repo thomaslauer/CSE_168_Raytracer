@@ -7,11 +7,13 @@
 
 thread_local std::default_random_engine MonteCarloDirectIntegrator::rng = std::default_random_engine((std::random_device())());
 
-MonteCarloDirectIntegrator::MonteCarloDirectIntegrator() {
+MonteCarloDirectIntegrator::MonteCarloDirectIntegrator()
+{
     gen = std::uniform_real_distribution<float>(0.0f, 1.0f);
 }
 
-glm::vec3 MonteCarloDirectIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction) {
+glm::vec3 MonteCarloDirectIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction)
+{
     glm::vec3 outputColor = glm::vec3(0);
 
     glm::vec3 hitPosition;
@@ -19,25 +21,30 @@ glm::vec3 MonteCarloDirectIntegrator::traceRay(glm::vec3 origin, glm::vec3 direc
     material_t hitMaterial;
     bool hit = _scene->castRay(origin, direction, &hitPosition, &hitNormal, &hitMaterial);
 
-    if (hit) {
-        if (hitMaterial.light) return hitMaterial.emission;
+    if (hit)
+    {
+        if (hitMaterial.light)
+            return hitMaterial.emission;
 
         int stratifyGridSize = _scene->stratifyGridSize;
 
-        for (auto light : _scene->quadLights) {
+        for (auto light : _scene->quadLights)
+        {
 
-            for (int n = 0; n < _scene->lightSamples; n++) {
+            for (int n = 0; n < _scene->lightSamples; n++)
+            {
                 // TODO: select random location on light
 
                 float offsetB = gen(rng);
                 float offsetC = gen(rng);
 
-                if (_scene->lightStratify) {
+                if (_scene->lightStratify)
+                {
                     int cellB = n % stratifyGridSize;
                     int cellC = n / stratifyGridSize;
 
-                    offsetB = (cellB + offsetB) / (float) stratifyGridSize;
-                    offsetC = (cellC + offsetC) / (float) stratifyGridSize;
+                    offsetB = (cellB + offsetB) / (float)stratifyGridSize;
+                    offsetC = (cellC + offsetC) / (float)stratifyGridSize;
                 }
 
                 glm::vec3 lightPosition = light.a + offsetB * light.ab + offsetC * light.ac;
@@ -51,7 +58,7 @@ glm::vec3 MonteCarloDirectIntegrator::traceRay(glm::vec3 origin, glm::vec3 direc
                 float V = occlusion(hitPosition, lightPosition);
                 float G = geometry(hitPosition, hitNormal, lightPosition, lightNormal);
 
-                outputColor += lightArea * light.intensity * F * V * G / (float) _scene->lightSamples;
+                outputColor += lightArea * light.intensity * F * V * G / (float)_scene->lightSamples;
                 //outputColor += brdf(hitMaterial) * V;
             }
         }
@@ -95,9 +102,11 @@ glm::vec3 MonteCarloDirectIntegrator::brdf(
     return diffuse + specular;
 }
 
-float MonteCarloDirectIntegrator::occlusion(glm::vec3 origin, glm::vec3 target) {
+float MonteCarloDirectIntegrator::occlusion(glm::vec3 origin, glm::vec3 target)
+{
     glm::vec3 direction = target - origin;
     bool occluded = _scene->castOcclusionRay(origin, glm::normalize(direction), glm::length(direction));
-    if (occluded) return 0;
+    if (occluded)
+        return 0;
     return 1;
 }

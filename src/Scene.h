@@ -62,9 +62,14 @@ public:
 
     RTCScene embreeScene;
 
+    // lighting information for Monte Carlo direct integrator
     int lightSamples;
     bool lightStratify;
     int stratifyGridSize;
+
+    int samplesPerPixel;
+
+    bool nextEventEstimation;
 
     bool castRay(
         glm::vec3 origin,

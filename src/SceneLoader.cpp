@@ -54,6 +54,10 @@ private:
     int _lightSamples = 1;
     bool _lightStratify = false;
 
+    int _samplesPerPixel = 1;
+
+    bool _nextEventEstimation = false;
+
     void quadLightToTriangles();
 
 public:
@@ -243,6 +247,17 @@ void SceneLoader::executeCommand(
             _lightStratify = true;
         else
             _lightStratify = false;
+    } else if (command == "spp") {
+
+        _samplesPerPixel = std::stoi(arguments[0]);
+
+    } else if (command == "nexteventestimation") {
+
+        if (arguments[0] == "on") {
+            _nextEventEstimation = true;
+        } else {
+            _nextEventEstimation = false;
+        }
 
     } else {
 
@@ -382,6 +397,8 @@ Integrator* SceneLoader::createIntegrator()
         it = new MonteCarloDirectIntegrator();
     } else if (_integratorType == "analyticdirect") {
         it = new AnalyticDirectIntegrator();
+    } else if (_integratorType == "pathtracer") {
+        it = new PathTracerIntegrator();
     } else {
         it = new RayTracerIntegrator();
     }
@@ -430,6 +447,8 @@ Scene* SceneLoader::commitSceneData()
     scene->lightSamples = _lightSamples;
     scene->lightStratify = _lightStratify;
     scene->stratifyGridSize = glm::sqrt(_lightSamples);
+    scene->samplesPerPixel = _samplesPerPixel;
+    scene->nextEventEstimation = _nextEventEstimation;
 
     return scene;
 }

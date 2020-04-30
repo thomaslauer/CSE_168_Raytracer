@@ -18,6 +18,7 @@ else()
     endif()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function -Wno-error=unused-parameter")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast")
     set(ARCH_LIBRARIES "pthread")
 endif()
 
@@ -31,6 +32,7 @@ set(LIB_SOURCES
     src/RayTracerIntegrator.cpp
     src/AnalyticDirectIntegrator.cpp
     src/MonteCarloDirectIntegrator.cpp
+    src/PathTracerIntegrator.cpp
     src/lodepng/lodepng.cpp
 )
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)

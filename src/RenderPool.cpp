@@ -2,6 +2,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <iostream>
 
 #include <glm/glm.hpp>
 
@@ -10,11 +11,14 @@
 
 #include "RenderPool.h"
 
+thread_local std::default_random_engine RenderJob::rng = std::default_random_engine((std::random_device())());
+
 RenderJob::RenderJob(glm::uvec2 startPixel, glm::uvec2 windowSize)
     : startPixel(startPixel),
       windowSize(windowSize),
       _result(windowSize.x * windowSize.y)
 {
+    gen = std::uniform_real_distribution<float>(-0.5f, 0.5f);
 }
 
 void RenderJob::render(Scene* scene, Integrator* integrator)
@@ -24,13 +28,26 @@ void RenderJob::render(Scene* scene, Integrator* integrator)
         for (size_t wx = 0; wx < windowSize.x; wx++) {
             size_t x = startPixel.x + wx;
 
-            glm::vec3 target =
-                scene->camera.imagePlaneTopLeft
-                + (x + 0.5f) * scene->camera.pixelRight
-                + (y + 0.5f) * scene->camera.pixelDown;
-            glm::vec3 direction = glm::normalize(target - scene->camera.origin);
+            _result[wy * windowSize.x + wx] = glm::vec3(0);
 
-            _result[wy * windowSize.x + wx] = integrator->traceRay(scene->camera.origin, direction);
+            for (int sampleNum = 0; sampleNum < scene->samplesPerPixel; sampleNum++) {
+
+                float offsetX = 0;
+                float offsetY = 0;
+
+                if (sampleNum != 0) {
+                    offsetX = gen(rng);
+                    offsetY = gen(rng);
+                }
+
+                glm::vec3 target =
+                    scene->camera.imagePlaneTopLeft
+                    + (x + 0.5f + offsetX) * scene->camera.pixelRight
+                    + (y + 0.5f + offsetY) * scene->camera.pixelDown;
+                glm::vec3 direction = glm::normalize(target - scene->camera.origin);
+
+                _result[wy * windowSize.x + wx] += integrator->traceRay(scene->camera.origin, direction) / ((float) scene->samplesPerPixel);
+            }
         }
     }
 }
