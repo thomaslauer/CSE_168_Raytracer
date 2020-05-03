@@ -57,6 +57,7 @@ private:
     int _samplesPerPixel = 1;
 
     bool _nextEventEstimation = false;
+    bool _russianRoulette = false;
 
     void quadLightToTriangles();
 
@@ -259,6 +260,14 @@ void SceneLoader::executeCommand(
             _nextEventEstimation = false;
         }
 
+    } else if (command == "russianroulette") {
+
+        if (arguments[0] == "on") {
+            _russianRoulette = true;
+        } else {
+            _russianRoulette = false;
+        }
+
     } else {
 
         std::cerr << "Unknown command in scene file: '" << command << "'" << std::endl;
@@ -449,6 +458,7 @@ Scene* SceneLoader::commitSceneData()
     scene->stratifyGridSize = glm::sqrt(_lightSamples);
     scene->samplesPerPixel = _samplesPerPixel;
     scene->nextEventEstimation = _nextEventEstimation;
+    scene->russianRoulette = _russianRoulette;
 
     return scene;
 }

@@ -70,6 +70,7 @@ public:
     int samplesPerPixel;
 
     bool nextEventEstimation;
+    bool russianRoulette;
 
     bool castRay(
         glm::vec3 origin,

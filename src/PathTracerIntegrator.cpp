@@ -39,9 +39,9 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
                 else
                     return glm::vec3(0);
             }
-            if (numBounces >= _scene->maxDepth) return glm::vec3(0);
+            if (!_scene->russianRoulette && numBounces >= _scene->maxDepth) return glm::vec3(0);
         } else {
-            if (hitMaterial.light || numBounces > _scene->maxDepth) return hitMaterial.emission;
+            if (hitMaterial.light || (!_scene->russianRoulette && numBounces > _scene->maxDepth)) return hitMaterial.emission;
         }
 
         if (_scene->nextEventEstimation) {
@@ -58,6 +58,8 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
             hitMaterial,
             origin,
             numBounces + 1);
+
+        outputColor += hitMaterial.emission;
     }
 
     return outputColor;
@@ -116,11 +118,27 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
     glm::vec3 w_out = glm::normalize(position - origin);
     for (int i = 0; i < numRaysPerBounce; i++) {
         glm::vec3 w_in = sampleHemisphere(normal);
-
         glm::vec3 f = brdf(material, w_in, w_out, normal);
-        outputColor += f * traceRay(position, w_in, numBounces) * glm::dot(w_in, normal);
+
+        glm::vec3 T = TWO_PI * f * glm::dot(w_in, normal);
+
+        if (_scene->russianRoulette) {
+            float p = 1 - glm::min(glm::max(T.x, glm::max(T.y, T.z)), 1.0f);
+
+            if (p > gen(rng)) {
+                // kill ray
+                continue;
+            } else {
+                // boost ray
+                float boost = 1.0f / (1.0f - p);
+                outputColor += boost * T * traceRay(position, w_in, numBounces);
+            }
+        } else {
+            outputColor += T * traceRay(position, w_in, numBounces);
+        }
+
     }
-    return outputColor * TWO_PI / ((float) numRaysPerBounce);
+    return outputColor / ((float) numRaysPerBounce);
 }
 
 float PathTracerIntegrator::geometry(
