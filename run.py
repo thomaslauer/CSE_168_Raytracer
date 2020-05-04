@@ -4,7 +4,7 @@ from pathlib import Path
 assignment = 3
 program = "rt168"
 
-os.system("cmake .. && make -j4")
+#os.system("cmake .. && make -j4")
 os.system("rm -f *.png *.zip")
 
 pathlist = Path(f"../scenes/hw{assignment}").glob("*.test")

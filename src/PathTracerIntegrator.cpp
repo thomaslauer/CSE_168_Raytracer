@@ -101,12 +101,20 @@ glm::vec3 PathTracerIntegrator::directLighting(
             float G = geometry(position, normal, lightPosition, lightNormal);
 
             outputColor += lightArea * light.intensity * F * V * G / (float)_scene->lightSamples;
-            //outputColor += brdf(hitMaterial) * V;
         }
     }
     return outputColor;
 }
 
+/**
+ * Computes the indirect lighting by recursively tracing relflected rays.
+ *
+ * @param position Where light is being sampled.
+ * @param normal The surface normal vector.
+ * @param material The object material.
+ * @param origin The origin or eye position of the ray which hit the object.
+ * @param numBounces The depth of the recursion, used as the end condition when Russian Roulette is disabled.
+ */
 glm::vec3 PathTracerIntegrator::indirectLighting(
     glm::vec3 position,
     glm::vec3 normal,
@@ -141,27 +149,14 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
     return outputColor / ((float) numRaysPerBounce);
 }
 
-float PathTracerIntegrator::geometry(
-    glm::vec3 surfacePoint,
-    glm::vec3 surfaceNormal,
-    glm::vec3 lightPoint,
-    glm::vec3 lightNormal)
-{
-    //float cosThetai = glm::dot(surfacePoint - origin, surfaceNormal) / glm::length(surfacePoint-origin);
-    //float cosThetal = -glm::dot(lightPoint - surfacePoint, lightNormal) / glm::length(lightPoint-surfacePoint);
-
-    glm::vec3 lightVector = glm::normalize(lightPoint - surfacePoint);
-
-    float cosThetai = glm::dot(lightVector, surfaceNormal);
-    float cosThetal = glm::dot(lightVector, -lightNormal);
-
-    cosThetai = (cosThetai < 0) ? 0 : cosThetai;
-    cosThetal = (cosThetal < 0) ? 0 : cosThetal;
-
-    //return cosThetai * cosThetal;
-    return cosThetai * cosThetal / glm::pow(glm::length(lightPoint - surfacePoint), 2);
-}
-
+/**
+ * The modified Blinn-Phong BRDF function.
+ *
+ * @param mat           The surface material.
+ * @param w_in          The incoming direction from the light.
+ * @param w_out         The outgoing direction to the observer.
+ * @param surfaceNormal The normal vector of the lit surface.
+ */
 glm::vec3 PathTracerIntegrator::brdf(
     material_t mat,
     glm::vec3 w_in,
@@ -176,6 +171,33 @@ glm::vec3 PathTracerIntegrator::brdf(
     return diffuse + specular;
 }
 
+float PathTracerIntegrator::geometry(
+    glm::vec3 surfacePoint,
+    glm::vec3 surfaceNormal,
+    glm::vec3 lightPoint,
+    glm::vec3 lightNormal)
+{
+    glm::vec3 lightVector = glm::normalize(lightPoint - surfacePoint);
+
+    float cosThetai = glm::dot(lightVector, surfaceNormal);
+    float cosThetal = glm::dot(lightVector, -lightNormal);
+
+    cosThetai = (cosThetai < 0) ? 0 : cosThetai;
+    cosThetal = (cosThetal < 0) ? 0 : cosThetal;
+
+    //return cosThetai * cosThetal;
+    return cosThetai * cosThetal / glm::pow(glm::length(lightPoint - surfacePoint), 2);
+}
+
+float PathTracerIntegrator::occlusion(glm::vec3 origin, glm::vec3 target)
+{
+    glm::vec3 direction = target - origin;
+    bool occluded = _scene->castOcclusionRay(origin, glm::normalize(direction), glm::length(direction));
+    if (occluded)
+        return 0;
+    return 1;
+}
+
 glm::vec3 PathTracerIntegrator::sampleHemisphere(glm::vec3 normal)
 {
     float epsilon1 = gen(rng);
@@ -186,8 +208,6 @@ glm::vec3 PathTracerIntegrator::sampleHemisphere(glm::vec3 normal)
 
     // a sample over the unit hemisphere
     glm::vec3 s = glm::vec3(glm::cos(phi) * glm::sin(theta), glm::sin(phi) * glm::sin(theta), glm::cos(theta));
-
-    //std::cout << glm::to_string(s) << std::endl;
 
     // calculate the new coordinate frame
     glm::vec3 w = glm::normalize(normal);
@@ -205,13 +225,4 @@ glm::vec3 PathTracerIntegrator::sampleHemisphere(glm::vec3 normal)
     glm::vec3 result = s.x * u + s.y * v + s.z * w;
 
     return result;
-}
-
-float PathTracerIntegrator::occlusion(glm::vec3 origin, glm::vec3 target)
-{
-    glm::vec3 direction = target - origin;
-    bool occluded = _scene->castOcclusionRay(origin, glm::normalize(direction), glm::length(direction));
-    if (occluded)
-        return 0;
-    return 1;
 }
