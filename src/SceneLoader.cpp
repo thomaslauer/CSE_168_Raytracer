@@ -307,8 +307,8 @@ void SceneLoader::quadLightToTriangles() {
         _vertices.push_back(light.a + light.ab + light.ac);
         _vertices.push_back(light.a + light.ac);
 
-        _indices.push_back(glm::uvec3(0, 1, 2) + glm::uvec3(offset));
-        _indices.push_back(glm::uvec3(0, 2, 3) + glm::uvec3(offset));
+        _indices.push_back(glm::uvec3(0, 2, 1) + glm::uvec3(offset));
+        _indices.push_back(glm::uvec3(0, 3, 2) + glm::uvec3(offset));
 
         material_t mat;
         mat.ambient = glm::vec3(0);
