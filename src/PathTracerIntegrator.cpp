@@ -223,8 +223,6 @@ glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_o
     glm::vec3 samplingSpaceCenter = normal;
     glm::vec3 reflection = -(2 * glm::dot(normal, w_out) * normal - w_out);
 
-    bool specular = false;
-
     if (_scene->importanceSampling == COSINE) {
         theta = glm::acos(glm::sqrt(epsilon1));
         phi = TWO_PI * epsilon2;
@@ -235,8 +233,6 @@ glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_o
             phi = TWO_PI * epsilon2;
 
             samplingSpaceCenter = reflection;
-            specular = true;
-
         } else {
             // diffuse pdf
             theta = glm::acos(glm::sqrt(epsilon1));
