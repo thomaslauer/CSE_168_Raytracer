@@ -58,6 +58,8 @@ private:
 
     bool _nextEventEstimation = false;
     bool _russianRoulette = false;
+    float _gamma = 1;
+    SamplingMethod _importanceSampling = HEMISPHERE;
 
     void quadLightToTriangles();
 
@@ -267,6 +269,19 @@ void SceneLoader::executeCommand(
         } else {
             _russianRoulette = false;
         }
+    } else if (command == "importancesampling") {
+
+        if (arguments[0] == "cosine") {
+            _importanceSampling = COSINE;
+        } else if (arguments[0] == "brdf") {
+            _importanceSampling = BRDF;
+        } else {
+            _importanceSampling = HEMISPHERE;
+        }
+
+    } else if (command == "gamma") {
+
+        _gamma = std::stof(arguments[0]);
 
     } else {
 
@@ -459,6 +474,8 @@ Scene* SceneLoader::commitSceneData()
     scene->samplesPerPixel = _samplesPerPixel;
     scene->nextEventEstimation = _nextEventEstimation;
     scene->russianRoulette = _russianRoulette;
+    scene->importanceSampling = _importanceSampling;
+    scene->gamma = _gamma;
 
     return scene;
 }

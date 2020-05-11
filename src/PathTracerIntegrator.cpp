@@ -124,11 +124,12 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
 {
     glm::vec3 outputColor = glm::vec3(0);
     glm::vec3 w_out = glm::normalize(position - origin);
-    for (int i = 0; i < numRaysPerBounce; i++) {
-        glm::vec3 w_in = sampleHemisphere(normal);
-        glm::vec3 f = brdf(material, w_in, w_out, normal);
 
-        glm::vec3 T = TWO_PI * f * glm::dot(w_in, normal);
+    for (int i = 0; i < numRaysPerBounce; i++) {
+        float pdfNormalization = 1;
+        glm::vec3 w_in = importanceSample(normal, w_out, material, pdfNormalization);
+        glm::vec3 f = brdf(material, w_in, w_out, normal);
+        glm::vec3 T = f * pdfNormalization;
 
         if (_scene->russianRoulette) {
             float p = 1 - glm::min(glm::max(T.x, glm::max(T.y, T.z)), 1.0f);
@@ -198,19 +199,60 @@ float PathTracerIntegrator::occlusion(glm::vec3 origin, glm::vec3 target)
     return 1;
 }
 
-glm::vec3 PathTracerIntegrator::sampleHemisphere(glm::vec3 normal)
+inline float averageVector(glm::vec3 vec) {
+    float avg = 0;
+    avg += vec.x;
+    avg += vec.y;
+    avg += vec.z;
+    return avg / 3.0f;
+}
+
+glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float& pdfNormalization)
 {
     float epsilon1 = gen(rng);
     float epsilon2 = gen(rng);
 
-    float theta = glm::acos(epsilon1);
-    float phi = TWO_PI * epsilon2;
+    float theta = 0;
+    float phi = 0;
+
+    float k_s = averageVector(material.specular);
+    float k_d = averageVector(material.diffuse);
+
+    float t = k_s / (k_s + k_d);
+
+    glm::vec3 samplingSpaceCenter = normal;
+    glm::vec3 reflection = -(2 * glm::dot(normal, w_out) * normal - w_out);
+
+    bool specular = false;
+
+    if (_scene->importanceSampling == COSINE) {
+        theta = glm::acos(glm::sqrt(epsilon1));
+        phi = TWO_PI * epsilon2;
+    } else if (_scene->importanceSampling == BRDF) {
+        if (gen(rng) < t) {
+            // specular pdf
+            theta = glm::acos(glm::pow(epsilon1, 1.0 / (1.0 + material.shininess)));
+            phi = TWO_PI * epsilon2;
+
+            samplingSpaceCenter = reflection;
+            specular = true;
+
+        } else {
+            // diffuse pdf
+            theta = glm::acos(glm::sqrt(epsilon1));
+            phi = TWO_PI * epsilon2;
+        }
+
+    } else {
+        theta = glm::acos(epsilon1);
+        phi = TWO_PI * epsilon2;
+    }
 
     // a sample over the unit hemisphere
     glm::vec3 s = glm::vec3(glm::cos(phi) * glm::sin(theta), glm::sin(phi) * glm::sin(theta), glm::cos(theta));
 
     // calculate the new coordinate frame
-    glm::vec3 w = glm::normalize(normal);
+    glm::vec3 w = samplingSpaceCenter;
 
     // create arbitrariy a vector. it's a secret tool we will need later
     glm::vec3 a = glm::vec3(0, 1, 0);
@@ -222,7 +264,18 @@ glm::vec3 PathTracerIntegrator::sampleHemisphere(glm::vec3 normal)
     glm::vec3 u = glm::normalize(glm::cross(a, w));
     glm::vec3 v = glm::cross(w, u);
 
-    glm::vec3 result = s.x * u + s.y * v + s.z * w;
+    glm::vec3 w_in = s.x * u + s.y * v + s.z * w;
 
-    return result;
+    if (_scene->importanceSampling == COSINE) {
+        pdfNormalization = PI;
+    } else if (_scene->importanceSampling == BRDF) {
+        float cosTerm = glm::max(0.0f, glm::dot(w_in, normal));
+        float diffuseNormalization = (1-t) * cosTerm / PI;
+        float specularNormalization = t * (material.shininess + 1) / TWO_PI * glm::pow(glm::max(0.0f, glm::dot(reflection, w_in)), material.shininess);
+        pdfNormalization = cosTerm / (diffuseNormalization + specularNormalization);
+    } else {
+        pdfNormalization = TWO_PI * glm::dot(w_in, normal);
+    }
+
+    return w_in;
 }

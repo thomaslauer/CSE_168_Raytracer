@@ -48,6 +48,12 @@ void RenderJob::render(Scene* scene, Integrator* integrator)
 
                 _result[wy * windowSize.x + wx] += integrator->traceRay(scene->camera.origin, direction) / ((float) scene->samplesPerPixel);
             }
+
+            // adjust gamma
+            _result[wy * windowSize.x + wx].x = glm::pow(_result[wy * windowSize.x + wx].x, 1.0f / scene->gamma);
+            _result[wy * windowSize.x + wx].y = glm::pow(_result[wy * windowSize.x + wx].y, 1.0f / scene->gamma);
+            _result[wy * windowSize.x + wx].z = glm::pow(_result[wy * windowSize.x + wx].z, 1.0f / scene->gamma);
+
         }
     }
 }

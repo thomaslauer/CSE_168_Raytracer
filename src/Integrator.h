@@ -102,7 +102,8 @@ private:
         glm::vec3   origin,
         int         numBounces);
 
-    glm::vec3 sampleHemisphere(glm::vec3 normal);
+
+    glm::vec3 importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float& pdfNormalization);
 
     float geometry(
         glm::vec3 direction,
