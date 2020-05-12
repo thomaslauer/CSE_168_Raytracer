@@ -105,12 +105,6 @@ private:
 
     glm::vec3 importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float& pdfNormalization);
 
-    float geometry(
-        glm::vec3 direction,
-        glm::vec3 surfaceNormal,
-        glm::vec3 lightDirection,
-        glm::vec3 lightNormal);
-
     // calculate BRDF for a material
     glm::vec3 brdf(
         material_t mat,
@@ -118,7 +112,40 @@ private:
         glm::vec3 w_out,
         glm::vec3 surfaceNormal);
 
+    glm::vec3 phongBRDF(
+        material_t mat,
+        glm::vec3 w_in,
+        glm::vec3 w_out,
+        glm::vec3 surfaceNormal);
+
+    float geometry(
+        glm::vec3 direction,
+        glm::vec3 surfaceNormal,
+        glm::vec3 lightDirection,
+        glm::vec3 lightNormal);
+
     float occlusion(glm::vec3 origin, glm::vec3 target);
+
+    glm::vec3 ggxBRDF(
+        material_t mat,
+        glm::vec3 w_in,
+        glm::vec3 w_out,
+        glm::vec3 surfaceNormal);
+
+    float ggxMicrofacetDistribution(
+        material_t mat,
+        float halfAngle);
+
+    float ggxMicrofacetSelfShadowing(
+        material_t mat,
+        glm::vec3 normal,
+        glm::vec3 view);
+
+    glm::vec3 ggxFresnel(
+        material_t mat,
+        glm::vec3 w_in,
+        glm::vec3 halfVector);
+
 public:
     PathTracerIntegrator();
     virtual glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);

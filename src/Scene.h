@@ -16,12 +16,20 @@ struct camera_t {
     glm::vec3 pixelDown;
 };
 
+typedef enum brdf_t {
+    PHONG,
+    GGX
+} brdf_t;
+
+
 struct material_t {
     glm::vec3 diffuse;
     glm::vec3 specular;
     float shininess;
     glm::vec3 emission;
     glm::vec3 ambient;
+    float roughness;
+    brdf_t brdf;
     bool light;
 };
 

@@ -42,12 +42,14 @@ private:
     std::vector<quadLight_t> _quadLights;
     glm::vec3 _curAttenuation = glm::vec3(1.0f, 0.0f, 0.0f);
     material_t _curMaterial = {
-        glm::vec3(0.0f),  // diffuse
-        glm::vec3(0.0f),  // specular
-        1.0f,  // shininess
-        glm::vec3(0.0f),  // emission
-        glm::vec3(0.2f, 0.2f, 0.2f),  // ambient
-        false             // light
+        glm::vec3(0.0f),                // diffuse
+        glm::vec3(0.0f),                // specular
+        1.0f,                           // shininess
+        glm::vec3(0.0f),                // emission
+        glm::vec3(0.2f, 0.2f, 0.2f),    // ambient
+        0.0f,                           // roughness
+        PHONG,                          // brdf type
+        false                           // light
     };
 
     std::string _integratorType = "raytracer";
@@ -236,6 +238,10 @@ void SceneLoader::executeCommand(
 
         _curMaterial.emission = loadVec3(arguments);
 
+    } else if (command == "roughness") {
+
+        _curMaterial.roughness = std::stof(arguments[0]);
+
     } else if (command == "integrator") {
 
         _integratorType = arguments[0];
@@ -278,7 +284,12 @@ void SceneLoader::executeCommand(
         } else {
             _importanceSampling = HEMISPHERE;
         }
-
+    } else if (command == "brdf") {
+        if (arguments[0] == "ggx") {
+            _curMaterial.brdf = GGX;
+        } else {
+            _curMaterial.brdf = PHONG;
+        }
     } else if (command == "gamma") {
 
         _gamma = std::stof(arguments[0]);
