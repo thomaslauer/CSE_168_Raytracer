@@ -51,11 +51,11 @@ struct quadLight_t {
     glm::vec3 intensity;
 };
 
-typedef enum SamplingMethod {
-    HEMISPHERE,
-    COSINE,
-    BRDF
-} SamplingMethod;
+typedef enum samplingMethod_t {
+    HEMISPHERE_SAMPLING,
+    COSINE_SAMPLING,
+    BRDF_SAMPLING
+} samplingMethod_t;
 
 class Scene {
 
@@ -73,7 +73,7 @@ public:
     std::vector<quadLight_t> quadLights;
 
     Integrator* integrator;
-    SamplingMethod importanceSampling;
+    samplingMethod_t importanceSampling;
     float gamma;
 
     RTCScene embreeScene;

@@ -4,9 +4,11 @@
 
 #include <glm/glm.hpp>
 
+#include "BRDF.h"
 #include "Constants.h"
 
-inline float averageVector(glm::vec3 vec) {
+inline float averageVector(glm::vec3 vec)
+{
     float avg = 0;
     avg += vec.x;
     avg += vec.y;
@@ -19,6 +21,9 @@ thread_local std::default_random_engine PathTracerIntegrator::rng = std::default
 PathTracerIntegrator::PathTracerIntegrator()
 {
     gen = std::uniform_real_distribution<float>(0.0f, 1.0f);
+
+    _phongBRDF = new PhongBRDF();
+    _ggxBRDF = new GGXBRDF();
 }
 
 glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction)
@@ -39,20 +44,27 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
 
     if (hit)
     {
-        if (_scene->nextEventEstimation) {
+        if (_scene->nextEventEstimation)
+        {
             // end conditions for NEE
-            if (hitMaterial.light) {
+            if (hitMaterial.light)
+            {
                 if (numBounces == 0)
                     outputColor += hitMaterial.emission;
                 else
                     return glm::vec3(0);
             }
-            if (!_scene->russianRoulette && numBounces >= _scene->maxDepth) return glm::vec3(0);
-        } else {
-            if (hitMaterial.light || (!_scene->russianRoulette && numBounces > _scene->maxDepth)) return hitMaterial.emission;
+            if (!_scene->russianRoulette && numBounces >= _scene->maxDepth)
+                return glm::vec3(0);
+        }
+        else
+        {
+            if (hitMaterial.light || (!_scene->russianRoulette && numBounces > _scene->maxDepth))
+                return hitMaterial.emission;
         }
 
-        if (_scene->nextEventEstimation) {
+        if (_scene->nextEventEstimation)
+        {
             outputColor += directLighting(
                 hitPosition,
                 hitNormal,
@@ -134,67 +146,56 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
     //glm::vec3 w_out = glm::normalize(position - origin);
     glm::vec3 w_out = glm::normalize(origin - position);
 
-    for (int i = 0; i < numRaysPerBounce; i++) {
+    for (int i = 0; i < numRaysPerBounce; i++)
+    {
         float pdfNormalization = 1;
         glm::vec3 w_in = importanceSample(normal, w_out, material, pdfNormalization);
         glm::vec3 f = brdf(material, w_in, w_out, normal);
         glm::vec3 T = f * pdfNormalization;
 
-        if (_scene->russianRoulette) {
+        if (_scene->russianRoulette)
+        {
             float p = 1 - glm::min(glm::max(T.x, glm::max(T.y, T.z)), 1.0f);
 
-            if (p > gen(rng)) {
+            if (p > gen(rng))
+            {
                 // kill ray
                 continue;
-            } else {
+            }
+            else
+            {
                 // boost ray
                 float boost = 1.0f / (1.0f - p);
                 outputColor += boost * T * traceRay(position, w_in, numBounces);
             }
-        } else {
+        }
+        else
+        {
             outputColor += T * traceRay(position, w_in, numBounces);
         }
-
     }
-    return outputColor / ((float) numRaysPerBounce);
+    return outputColor / ((float)numRaysPerBounce);
 }
 
+// TODO: rename these parameters to match the generic BRDF versions
 inline glm::vec3 PathTracerIntegrator::brdf(
     material_t mat,
     glm::vec3 w_in,
     glm::vec3 w_out,
     glm::vec3 surfaceNormal)
 {
-    if (mat.brdf == GGX) {
-        return ggxBRDF(mat, w_in, w_out, surfaceNormal);
-    } else {
-        return phongBRDF(mat, w_in, w_out, surfaceNormal);
+    if (mat.brdf == GGX)
+    {
+        return _ggxBRDF->brdf(surfaceNormal, w_in, w_out, mat);
+    }
+    else
+    {
+        return _phongBRDF->brdf(surfaceNormal, w_in, w_out, mat);
     }
 }
-/**
- * The modified Blinn-Phong BRDF function.
- *
- * @param mat           The surface material.
- * @param w_in          The incoming direction from the light.
- * @param w_out         The outgoing direction to the observer.
- * @param surfaceNormal The normal vector of the lit surface.
- */
-glm::vec3 PathTracerIntegrator::phongBRDF(
-    material_t mat,
-    glm::vec3 w_in,
-    glm::vec3 w_out,
-    glm::vec3 surfaceNormal)
-{
-    glm::vec3 reflection = 2 * glm::dot(surfaceNormal, w_out) * surfaceNormal - w_out;
-
-    glm::vec3 diffuse = mat.diffuse * INV_PI;
-    glm::vec3 specular = mat.specular * (mat.shininess + 2) / (2 * PI) * glm::pow(glm::dot(reflection, w_in), mat.shininess);
-
-    return diffuse + specular;
-}
 
 /**
- * Geometry term for Phong BRDF
+ * Geometry term for rendering equation
  */
 float PathTracerIntegrator::geometry(
     glm::vec3 surfacePoint,
@@ -215,7 +216,7 @@ float PathTracerIntegrator::geometry(
 }
 
 /**
- * Occlusion term for Phong BRDF
+ * Occlusion term for rendering equation
  */
 float PathTracerIntegrator::occlusion(glm::vec3 origin, glm::vec3 target)
 {
@@ -259,7 +260,8 @@ float PathTracerIntegrator::ggxMicrofacetSelfShadowing(
     glm::vec3 normal,
     glm::vec3 view)
 {
-    if (glm::dot(view, normal) <= 0) {
+    if (glm::dot(view, normal) <= 0)
+    {
         return 0;
     }
 
@@ -273,10 +275,66 @@ glm::vec3 PathTracerIntegrator::ggxFresnel(
     glm::vec3 w_in,
     glm::vec3 halfVector)
 {
-    return mat.specular + (1.0f - mat.specular) * glm::pow(1.0f - glm::dot(w_in, halfVector), 5.0f);
+    return mat.specular + (glm::vec3(1) - mat.specular) * glm::pow(1.0f - glm::dot(w_in, halfVector), 5.0f);
 }
 
-glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float& pdfNormalization)
+glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float &pdfNormalization) {
+    glm::vec3 w_in;
+
+    float epsilon1 = gen(rng);
+    float epsilon2 = gen(rng);
+
+    float theta = 0;
+    float phi = 0;
+
+    float k_s = averageVector(material.specular);
+    float k_d = averageVector(material.diffuse);
+
+    float t = k_s / (k_s + k_d);
+
+    glm::vec3 samplingSpaceCenter = normal;
+    glm::vec3 reflection = (2 * glm::dot(normal, w_out) * normal - w_out);
+
+    if (_scene->importanceSampling == COSINE_SAMPLING) {
+
+        theta = glm::acos(glm::sqrt(epsilon1));
+        phi = TWO_PI * epsilon2;
+
+        // a sample over the unit hemisphere
+        glm::vec3 s = glm::vec3(glm::cos(phi) * glm::sin(theta), glm::sin(phi) * glm::sin(theta), glm::cos(theta));
+
+        // calculate the new coordinate frame
+        glm::vec3 w = samplingSpaceCenter;
+
+        // create arbitrariy a vector. it's a secret tool we will need later
+        glm::vec3 a = glm::vec3(0, 1, 0);
+
+        // if a isn't a good choice, pick a new one
+        if (glm::length(w - a) < 0.001 || glm::length(w + a) < 0.001)
+            a = glm::vec3(0, 0, 1);
+
+        glm::vec3 u = glm::normalize(glm::cross(a, w));
+        glm::vec3 v = glm::cross(w, u);
+
+        w_in = s.x * u + s.y * v + s.z * w;
+
+
+        pdfNormalization = PI;
+    } else if (_scene->importanceSampling == BRDF_SAMPLING) {
+        if (material.brdf == GGX) {
+            w_in = _ggxBRDF->importanceSample(normal, w_out, material);
+            pdfNormalization = _ggxBRDF->pdf(normal, w_in, w_out, material);
+        } else {
+            w_in = _phongBRDF->importanceSample(normal, w_out, material);
+            pdfNormalization = _phongBRDF->pdf(normal, w_in, w_out, material);
+        }
+    }
+
+    return w_in;
+}
+
+/*
+glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float &pdfNormalization)
 {
     float epsilon1 = gen(rng);
     float epsilon2 = gen(rng);
@@ -295,37 +353,51 @@ glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_o
     // if true, w_in is actually the half angle and I need to reflect w_out across it to get the new w_in
     bool needsReflection = false;
 
-    if (_scene->importanceSampling == COSINE) {
+    if (_scene->importanceSampling == COSINE_SAMPLING)
+    {
         theta = glm::acos(glm::sqrt(epsilon1));
         phi = TWO_PI * epsilon2;
-    } else if (_scene->importanceSampling == BRDF) {
-        if (material.brdf == GGX) {
-            if (t < 0.25) t = 0.25;
-            if (gen(rng) < t) {
+    }
+    else if (_scene->importanceSampling == BRDF_SAMPLING)
+    {
+        if (material.brdf == GGX)
+        {
+            if (t < 0.25)
+                t = 0.25;
+            if (gen(rng) < t)
+            {
                 // ggx pdf
                 theta = glm::acos(material.roughness * glm::sqrt(epsilon1) / glm::sqrt(1 - epsilon1));
                 phi = TWO_PI * epsilon2;
                 needsReflection = true;
-            } else {
-                // diffuse pdf
-                theta = glm::acos(glm::sqrt(epsilon1));
-                phi = TWO_PI * epsilon2;
             }
-
-        } else {
-            if (gen(rng) < t) {
-                // specular pdf
-                theta = glm::acos(glm::pow(epsilon1, 1.0 / (1.0 + material.shininess)));
-                phi = TWO_PI * epsilon2;
-
-                samplingSpaceCenter = reflection;
-            } else {
+            else
+            {
                 // diffuse pdf
                 theta = glm::acos(glm::sqrt(epsilon1));
                 phi = TWO_PI * epsilon2;
             }
         }
-    } else {
+        else
+        {
+            if (gen(rng) < t)
+            {
+                // specular pdf
+                theta = glm::acos(glm::pow(epsilon1, 1.0 / (1.0 + material.shininess)));
+                phi = TWO_PI * epsilon2;
+
+                samplingSpaceCenter = reflection;
+            }
+            else
+            {
+                // diffuse pdf
+                theta = glm::acos(glm::sqrt(epsilon1));
+                phi = TWO_PI * epsilon2;
+            }
+        }
+    }
+    else
+    {
         theta = glm::acos(epsilon1);
         phi = TWO_PI * epsilon2;
     }
@@ -348,27 +420,42 @@ glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_o
 
     glm::vec3 w_in = s.x * u + s.y * v + s.z * w;
 
-
-    if (_scene->importanceSampling == COSINE) {
+    if (_scene->importanceSampling == COSINE_SAMPLING)
+    {
         pdfNormalization = PI;
-    } else if (_scene->importanceSampling == BRDF) {
-        if (material.brdf == GGX) {
+    }
+    else if (_scene->importanceSampling == BRDF_SAMPLING)
+    {
+        if (material.brdf == GGX)
+        {
             // TODO: I really need to clean this up
-            if (needsReflection) {
+            if (needsReflection)
+            {
                 glm::vec3 halfAngle = w_in;
                 w_in = glm::reflect(w_out, halfAngle);
             }
             pdfNormalization = 1;
-        } else {
+        }
+        else
+        {
             float cosTerm = glm::max(0.0f, glm::dot(w_in, normal));
-            float diffuseNormalization = (1-t) * cosTerm / PI;
-            float specularNormalization = t * (material.shininess + 1)
-                    / TWO_PI * glm::pow(glm::max(0.0f, glm::dot(reflection, w_in)), material.shininess);
+            float diffuseNormalization = (1 - t) * cosTerm / PI;
+            float specularNormalization = t * (material.shininess + 1) / TWO_PI * glm::pow(glm::max(0.0f, glm::dot(reflection, w_in)), material.shininess);
             pdfNormalization = cosTerm / (diffuseNormalization + specularNormalization);
         }
-    } else {
+    }
+    else
+    {
         pdfNormalization = TWO_PI * glm::dot(w_in, normal);
     }
 
     return w_in;
+}
+*/
+
+void PathTracerIntegrator::setScene(Scene* scene) {
+    std::cout << "Hello world" << std::endl;
+    _scene = scene;
+
+    _phongBRDF->setScene(scene);
 }

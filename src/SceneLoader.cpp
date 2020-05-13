@@ -61,7 +61,7 @@ private:
     bool _nextEventEstimation = false;
     bool _russianRoulette = false;
     float _gamma = 1;
-    SamplingMethod _importanceSampling = HEMISPHERE;
+    samplingMethod_t _importanceSampling = HEMISPHERE_SAMPLING;
 
     void quadLightToTriangles();
 
@@ -278,11 +278,11 @@ void SceneLoader::executeCommand(
     } else if (command == "importancesampling") {
 
         if (arguments[0] == "cosine") {
-            _importanceSampling = COSINE;
+            _importanceSampling = COSINE_SAMPLING;
         } else if (arguments[0] == "brdf") {
-            _importanceSampling = BRDF;
+            _importanceSampling = BRDF_SAMPLING;
         } else {
-            _importanceSampling = HEMISPHERE;
+            _importanceSampling = HEMISPHERE_SAMPLING;
         }
     } else if (command == "brdf") {
         if (arguments[0] == "ggx") {

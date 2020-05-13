@@ -6,6 +6,7 @@
 #include <random>
 
 #include "Scene.h"
+#include "BRDF.h"
 
 class Integrator {
 
@@ -15,7 +16,7 @@ protected:
 
 public:
 
-    void setScene(Scene* scene)
+    virtual void setScene(Scene* scene)
     {
         _scene = scene;
     }
@@ -83,6 +84,9 @@ private:
 
     int numRaysPerBounce = 1;
 
+    BRDF* _phongBRDF;
+    BRDF* _ggxBRDF;
+
     glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction, int numBounces);
 
     // separate functions for direct and indirect lighting components
@@ -107,12 +111,6 @@ private:
 
     // calculate BRDF for a material
     glm::vec3 brdf(
-        material_t mat,
-        glm::vec3 w_in,
-        glm::vec3 w_out,
-        glm::vec3 surfaceNormal);
-
-    glm::vec3 phongBRDF(
         material_t mat,
         glm::vec3 w_in,
         glm::vec3 w_out,
@@ -148,5 +146,6 @@ private:
 
 public:
     PathTracerIntegrator();
+    void setScene(Scene* scene);
     virtual glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);
 };

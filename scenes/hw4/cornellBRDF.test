@@ -1,7 +1,7 @@
 #Cornell Box
 size 480 480
 integrator pathtracer
-spp 6400
+spp 64
 importancesampling brdf
 nexteventestimation on
 russianroulette on
@@ -86,12 +86,15 @@ tri 0 1 2
 tri 0 2 3
 popTransform
 
+brdf phong
+
 #sphere
 diffuse 0.2 0.2 0.2
 specular 0.8 0.8 0.8
 pushTransform
 translate 0 0.5 0
 scale 0.5 0.5 0.5
+roughness 0.5
 
 sphere 0 0 0 1
 
