@@ -1,8 +1,8 @@
 size 1280 280
 integrator pathtracer
-spp 1000
+spp 64
 gamma 2.2
-importancesampling cosine
+importancesampling brdf
 nexteventestimation on
 russianroulette on
 camera  0 2 15  0 -3 2.5  0 1 0  13
@@ -38,8 +38,8 @@ tri 0 1 2
 tri 3 2 1
 
 # back wall
-tri 4 6 5
-tri 7 5 6
+tri 6 5 4
+tri 5 6 7
 
 # sphere default material settings
 brdf ggx

@@ -16,7 +16,7 @@ else()
     elseif (UNIX)
         set(embree_DIR "/usr/lib64/cmake/embree-3.9.0/" CACHE PATH "Embree Directory")
     endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -std=c++11 -Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function -Wno-error=unused-parameter")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -std=c++11 -Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function -Wno-error=unused-parameter")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
     set(ARCH_LIBRARIES "pthread")
 endif()
@@ -35,6 +35,7 @@ set(LIB_SOURCES
     src/BRDF.cpp
     src/PhongBRDF.cpp
     src/GGXBRDF.cpp
+    src/MathUtils.cpp
     src/lodepng/lodepng.cpp
 )
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)

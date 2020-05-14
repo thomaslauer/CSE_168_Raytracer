@@ -12,11 +12,6 @@ protected:
 
     Scene* _scene;
 
-    glm::vec3 sphereCoordsToVector(float theta, float phi, glm::vec3 samplingSpaceCenter);
-
-    float averageVector(glm::vec3 vec);
-
-
     // random devices
     static thread_local std::default_random_engine rng;
     std::uniform_real_distribution<float> gen;
