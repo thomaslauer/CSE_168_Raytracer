@@ -21,9 +21,10 @@ glm::vec3 GGXBRDF::brdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, mater
     return material.diffuse / PI + D * G * F / normalization;
 }
 
-glm::vec3 GGXBRDF::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material) {
+glm::vec3 GGXBRDF::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float& pdfNormalization) {
     float epsilon1 = gen(rng);
     float epsilon2 = gen(rng);
+    float epsilon3 = gen(rng);
 
     float theta = 0;
     float phi = 0;
@@ -32,62 +33,41 @@ glm::vec3 GGXBRDF::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_
     float k_d = averageVector(material.diffuse);
 
     float t = glm::max(0.25f, k_s / (k_s + k_d));
+    glm::vec3 w_in;
 
-    if (gen(rng) < t)
+    if (epsilon3 < t)
     {
         // ggx pdf
         theta = glm::atan(material.roughness * glm::sqrt(epsilon1), glm::sqrt(1 - epsilon1));
         phi = TWO_PI * epsilon2;
 
         glm::vec3 halfVector = sphereCoordsToVector(theta, phi, normal);
-        glm::vec3 w_in = glm::normalize(2.0f * halfVector - w_out);
-
-        if (glm::any(glm::isnan(w_in))) {
-            std::cout << "GGX w_in is nan" << std::endl;
-        }
-
-        return w_in;
+        w_in = glm::normalize(2.0f * halfVector - w_out);
     }
     else
     {
         // diffuse pdf
         theta = glm::acos(glm::sqrt(epsilon1));
         phi = TWO_PI * epsilon2;
-        glm::vec3 w_in = sphereCoordsToVector(theta, phi, normal);
-
-        if (glm::any(glm::isnan(w_in))) {
-            std::cout << "Diffuse w_in is nan" << std::endl;
-        }
-
-        return w_in;
-    }
-}
-
-float GGXBRDF::pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material) {
-
-    if (glm::dot(normal, w_in) < 0 || glm::dot(normal, w_out) < 0) {
-        return 0;
+        w_in = sphereCoordsToVector(theta, phi, normal);
     }
 
-    float k_s = averageVector(material.specular);
-    float k_d = averageVector(material.diffuse);
-    float t = glm::max(0.25f, k_s / (k_s + k_d));
+    // begin PDF computation
     glm::vec3 halfVector = glm::normalize(glm::normalize(w_in) + glm::normalize(w_out));
     float halfAngle = glm::acos(glm::min(1.0f, glm::dot(halfVector, normal)));
-
-    if (glm::isnan(halfAngle)) std::cout << glm::dot(halfVector, normal) << std::endl;
 
     float diffuseTerm = (1.0f-t) * glm::dot(normal, w_in) / PI;
     float ggxTerm = t * microfacetDistribution(halfAngle, material) * glm::dot(normal, halfVector) / (4.0f * glm::dot(halfVector, w_in));
 
-    float result = diffuseTerm + ggxTerm;
-    return result;
+    pdfNormalization = diffuseTerm + ggxTerm;
+    return w_in;
 }
 
-inline float GGXBRDF::microfacetDistribution(float halfAngle, material_t material) {
-    float a_squared = glm::pow(material.roughness, 2);
 
-    float denominator = PI * glm::pow(glm::cos(halfAngle), 4) * glm::pow(a_squared + glm::pow(glm::tan(halfAngle), 2), 2);
+inline float GGXBRDF::microfacetDistribution(float halfAngle, material_t material) {
+    float a_squared = material.roughness * material.roughness;
+
+    float denominator = PI * glm::pow(glm::cos(halfAngle), 4.0f) * glm::pow(a_squared + glm::pow(glm::tan(halfAngle), 2.0f), 2.0f);
     return a_squared / denominator;
 }
 

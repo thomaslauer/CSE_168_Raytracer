@@ -246,11 +246,9 @@ glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_o
 
     } else if (_scene->importanceSampling == BRDF_SAMPLING) {
         if (material.brdf == GGX) {
-            w_in = _ggxBRDF->importanceSample(normal, w_out, material);
-            pdfNormalization = _ggxBRDF->pdf(normal, w_in, w_out, material);
+            w_in = _ggxBRDF->importanceSample(normal, w_out, material, pdfNormalization);
         } else {
-            w_in = _phongBRDF->importanceSample(normal, w_out, material);
-            pdfNormalization = _phongBRDF->pdf(normal, w_in, w_out, material);
+            w_in = _phongBRDF->importanceSample(normal, w_out, material, pdfNormalization);
         }
     } else {
         // hemisphere sampling

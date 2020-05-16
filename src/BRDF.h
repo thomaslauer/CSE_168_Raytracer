@@ -31,22 +31,19 @@ public:
      *************************************/
 
     virtual glm::vec3 brdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material) = 0;
-    virtual glm::vec3 importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material) = 0;
-    virtual float pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material) = 0;
+    virtual glm::vec3 importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float& pdfNormalization) = 0;
 };
 
 class PhongBRDF : public BRDF {
 public:
     glm::vec3 brdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
-    glm::vec3 importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material);
-    float pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
+    glm::vec3 importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float& pdfNormalization);
 };
 
 class GGXBRDF : public BRDF {
 public:
     glm::vec3 brdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
-    glm::vec3 importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material);
-    float pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
+    glm::vec3 importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float& pdfNormalization);
 
     float microfacetDistribution(float halfAngle, material_t material);
     float microfacetSelfShadowing(glm::vec3 normal, glm::vec3 view, material_t material);

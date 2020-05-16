@@ -12,7 +12,7 @@ glm::vec3 PhongBRDF::brdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, mat
     return diffuse + specular;
 }
 
-glm::vec3 PhongBRDF::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material) {
+glm::vec3 PhongBRDF::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float& pdfNormalization) {
     float epsilon1 = gen(rng);
     float epsilon2 = gen(rng);
 
@@ -43,9 +43,21 @@ glm::vec3 PhongBRDF::importanceSample(glm::vec3 normal, glm::vec3 w_out, materia
     }
 
     glm::vec3 w_in = sphereCoordsToVector(theta, phi, samplingSpaceCenter);
+
+    // calculate pdf normalization
+    float cosTerm = glm::max(0.0f, glm::dot(w_in, normal));
+
+    float diffuse = (1 - t) * cosTerm / PI;
+    float specular = t * (material.shininess + 1) / TWO_PI * glm::pow(glm::max(0.0f, glm::dot(reflection, w_in)), material.shininess);
+    //return cosTerm / (diffuseNormalization + specularNormalization);
+
+    pdfNormalization = diffuse + specular;
+
+
     return w_in;
 }
 
+/*
 float PhongBRDF::pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material) {
 
     float k_s = averageVector(material.specular);
@@ -63,3 +75,4 @@ float PhongBRDF::pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material
 
     return diffuse + specular;
 }
+*/
