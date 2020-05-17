@@ -46,7 +46,9 @@ void RenderJob::render(Scene* scene, Integrator* integrator)
                     + (y + 0.5f + offsetY) * scene->camera.pixelDown;
                 glm::vec3 direction = glm::normalize(target - scene->camera.origin);
 
-                _result[wy * windowSize.x + wx] += integrator->traceRay(scene->camera.origin, direction) / ((float) scene->samplesPerPixel);
+                glm::vec3 currentResult = integrator->traceRay(scene->camera.origin, direction) / ((float) scene->samplesPerPixel);
+
+                if (!glm::any(isnan(currentResult))) _result[wy * windowSize.x + wx] += currentResult;
             }
 
             // adjust gamma

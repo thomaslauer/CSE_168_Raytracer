@@ -9,6 +9,11 @@
 #include "MathUtils.h"
 
 glm::vec3 GGXBRDF::brdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material) {
+
+    if (glm::dot(normal, w_in) < 0 || glm::dot(normal, w_out) < 0) {
+        return glm::vec3(0);
+    }
+
     glm::vec3 halfVector = glm::normalize(glm::normalize(w_in) + glm::normalize(w_out));
     float halfAngle = glm::acos(glm::min(1.0f, glm::dot(halfVector, normal)));
 

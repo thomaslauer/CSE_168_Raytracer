@@ -41,10 +41,12 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
             // end conditions for NEE
             if (hitMaterial.light)
             {
-                if (numBounces == 0)
+                if (numBounces == 0 && glm::dot(hitNormal, direction) <= 0) {
                     outputColor += hitMaterial.emission;
-                else
+                }
+                else {
                     return glm::vec3(0);
+                }
             }
             if (!_scene->russianRoulette && numBounces >= _scene->maxDepth)
                 return glm::vec3(0);
@@ -137,18 +139,20 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
     glm::vec3 outputColor = glm::vec3(0);
     //glm::vec3 w_out = glm::normalize(position - origin);
     glm::vec3 w_out = glm::normalize(origin - position);
-
+    
     for (int i = 0; i < numRaysPerBounce; i++)
     {
-        float pdfNormalization = 1;
-        glm::vec3 w_in = importanceSample(normal, w_out, material, pdfNormalization);
+        float pdfNormalization;
+        glm::vec3 w_in;
+        glm::vec3 f;
+        glm::vec3 T;
 
-        if (pdfNormalization <= 0) {
-            return outputColor;
-        }
+        do {
+            w_in = importanceSample(normal, w_out, material, pdfNormalization);
 
-        glm::vec3 f = brdf(material, w_in, w_out, normal);
-        glm::vec3 T = f * glm::max(0.0f, glm::dot(w_in, normal)) / pdfNormalization;
+            f = brdf(material, w_in, w_out, normal);
+            T = f * glm::dot(w_in, normal) / pdfNormalization;
+        } while (glm::any(glm::isnan(w_in)) || glm::any(isnan(T)) || glm::any(glm::lessThan(T, glm::vec3(0))));
 
         if (_scene->russianRoulette)
         {
