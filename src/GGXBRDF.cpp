@@ -42,7 +42,7 @@ glm::vec3 GGXBRDF::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_
         phi = TWO_PI * epsilon2;
 
         glm::vec3 halfVector = sphereCoordsToVector(theta, phi, normal);
-        w_in = glm::normalize(2.0f * halfVector - w_out);
+        w_in = glm::reflect(-w_out, halfVector);
     }
     else
     {
@@ -53,7 +53,7 @@ glm::vec3 GGXBRDF::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_
     }
 
     // begin PDF computation
-    glm::vec3 halfVector = glm::normalize(glm::normalize(w_in) + glm::normalize(w_out));
+    glm::vec3 halfVector = glm::normalize(w_in + w_out);
     float halfAngle = glm::acos(glm::min(1.0f, glm::dot(halfVector, normal)));
 
     float diffuseTerm = (1.0f-t) * glm::dot(normal, w_in) / PI;
