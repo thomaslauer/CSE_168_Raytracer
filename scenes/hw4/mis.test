@@ -5,8 +5,8 @@ size 768 512
 integrator pathtracer
 spp 32
 gamma 2.2
-importancesampling cosine
-nexteventestimation on
+importancesampling brdf
+nexteventestimation mis
 russianroulette off
 camera  0 2 15  0 -2 2.5  0 1 0  28
 output mis.png
@@ -96,8 +96,8 @@ tri 25 26 27
 # back wall
 specular 0 0 0
 diffuse 1 1 1
-tri 28 30 29
-tri 31 29 30
+tri 30 29 28
+tri 29 30 31
 
 
 # overhead light
