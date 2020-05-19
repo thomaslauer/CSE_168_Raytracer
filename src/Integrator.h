@@ -119,7 +119,7 @@ private:
     
     float neePDF(glm::vec3 position, glm::vec3 w_in);
 
-    float brdfMisWeighting(glm::vec3 position, glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
+    float brdfMisWeighting(glm::vec3 position, glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material, bool brdf);
 
     float pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
 

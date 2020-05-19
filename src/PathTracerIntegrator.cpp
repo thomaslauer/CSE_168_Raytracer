@@ -74,9 +74,15 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
                 hitMaterial,
                 origin,
                 brdfWeighting);
+            
+            //brdfWeighting = 1 - brdfWeighting;
 
-            outputColor += neeWeighting * neeColor;
-            //outputColor += brdfWeighting * brdfColor;
+            //std::cout << brdfWeighting << " " << neeWeighting << std::endl;
+
+            //outputColor += neeWeighting * neeColor;
+            outputColor += neeColor;
+            outputColor += brdfWeighting * brdfColor;
+            //outputColor += brdfWeighting * glm::vec3(1);
 
         } else if (_scene->nextEventEstimation) {
             float neePDF;
@@ -140,9 +146,10 @@ glm::vec3 PathTracerIntegrator::nextEventEstimation(
             float V = occlusion(position, lightPosition);
             float G = geometry(position, normal, lightPosition, lightNormal);
 
-            outputColor += lightArea * light.intensity * F * V * G / (float)_scene->lightSamples;
+            float currentpdf = neePDF(position, w_in);
 
-            pdfNormalization += 1.0 - brdfMisWeighting(position, normal, w_in, w_out, material);
+            pdfNormalization = brdfMisWeighting(position, normal, w_in, w_out, material, false);
+            outputColor += lightArea * light.intensity * F * V * G * pdfNormalization / ((float)_scene->lightSamples);
         }
     }
     pdfNormalization /= (float)_scene->quadLights.size();
@@ -155,14 +162,17 @@ float PathTracerIntegrator::neePDF(glm::vec3 position, glm::vec3 w_in) {
         // dummy variable I don't actually use
         glm::vec2 baryPos;
 
+        const float EPSILON1 = 0.01f;
+        const float EPSILON2 = 1.01f;
+
         // sample the first triangle
         float distA = 0;
         bool hitA = glm::intersectRayTriangle(
             position,
             w_in, 
-            light.a,
-            light.a + light.ab,
-            light.a + light.ac,
+            light.a - EPSILON1 * (light.ab + light.ac),
+            light.a + EPSILON2 * light.ab,
+            light.a + EPSILON2 * light.ac,
             baryPos,
             distA);
 
@@ -171,15 +181,15 @@ float PathTracerIntegrator::neePDF(glm::vec3 position, glm::vec3 w_in) {
         bool hitB = glm::intersectRayTriangle(
             position,
             w_in, 
-            light.a + light.ab + light.ac,
-            light.a + light.ab,
-            light.a + light.ac,
+            light.a + EPSILON2 * (light.ab + light.ac),
+            light.a + EPSILON2 * light.ab,
+            light.a + EPSILON2 * light.ac,
             baryPos,
             distB);
         
         float actualDist;
         if (hitA && hitB) {
-            actualDist = glm::min(distA, distB);
+            actualDist = glm::max(distA, distB);
         } else if (!hitA && hitB) {
             actualDist = distB;
         } else if (hitA && !hitB) {
@@ -196,11 +206,10 @@ float PathTracerIntegrator::neePDF(glm::vec3 position, glm::vec3 w_in) {
     }
     p = p / (float)_scene->quadLights.size();
 
-    //std::cout << p << std::endl;
     return p;
 }
 
-float PathTracerIntegrator::brdfMisWeighting(glm::vec3 position, glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material) {
+float PathTracerIntegrator::brdfMisWeighting(glm::vec3 position, glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material, bool use_brdf) {
     float neePDFValue = neePDF(position, w_in);
     float brdfPDFValue = pdf(normal, w_in, w_out, material);
 
@@ -209,9 +218,15 @@ float PathTracerIntegrator::brdfMisWeighting(glm::vec3 position, glm::vec3 norma
     float neePDF2 = glm::pow(neePDFValue, 2);
     float brdfPDF2 = glm::pow(brdfPDFValue, 2);
 
+    //std::cout << "pdf: " << neePDFValue << " " << brdfPDFValue << std::endl;
+
     float denom = neePDF2 + brdfPDF2;
 
-    return brdfPDF2 / denom;
+    if (use_brdf) {
+        return brdfPDF2 / denom;
+    } else {
+        return neePDF2 / denom;
+    }
 }
 
 /**
@@ -288,10 +303,10 @@ glm::vec3 PathTracerIntegrator::ggxDirect(
 
     if (hit) {
         glm::vec3 f = brdf(normal, w_in, w_out, material);
-        glm::vec3 T = f * glm::dot(w_in, normal) / dummy;
+        glm::vec3 T = f * glm::dot(w_in, normal);
         float G = geometry(position, normal, hitPosition, hitNormal);
-        pdfNormalization = brdfMisWeighting(position, normal, w_in, w_out, material);
-        outputColor = T * hitMaterial.emission;
+        pdfNormalization = brdfMisWeighting(position, normal, w_in, w_out, material, true);
+        outputColor = T * hitMaterial.emission / pdf(normal, w_in, w_out, material);
     }
 
     return outputColor;
