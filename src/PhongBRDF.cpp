@@ -57,7 +57,6 @@ glm::vec3 PhongBRDF::importanceSample(glm::vec3 normal, glm::vec3 w_out, materia
     return w_in;
 }
 
-/*
 float PhongBRDF::pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material) {
 
     float k_s = averageVector(material.specular);
@@ -75,4 +74,3 @@ float PhongBRDF::pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material
 
     return diffuse + specular;
 }
-*/

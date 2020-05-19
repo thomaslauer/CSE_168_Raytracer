@@ -13,4 +13,4 @@ for path in pathlist:
     os.system(f"./{program} {path}")
 
 os.system(f"zip homework{assignment}a.zip cornellCosine.png cornellBRDF.png")
-#os.system(f"zip homework{assignment}b.zip cornellRR.png dragon.png")
+os.system(f"zip homework{assignment}b.zip mis.png dragon.png")

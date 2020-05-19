@@ -103,6 +103,7 @@ void render(const std::string& sceneFilePath)
     std::cout << "Preparing render jobs..." << std::endl;
 
     int numThreads = std::thread::hardware_concurrency();
+    //numThreads = 1;
 
     std::vector<RenderJob*> jobs;
     for (unsigned int y = 0; y < scene->imageSize.y; y += WINDOW_DIM) {

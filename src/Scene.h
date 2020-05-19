@@ -85,6 +85,7 @@ public:
 
     int samplesPerPixel;
 
+    bool MIS;
     bool nextEventEstimation;
     bool russianRoulette;
 

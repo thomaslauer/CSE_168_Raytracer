@@ -58,6 +58,7 @@ private:
 
     int _samplesPerPixel = 1;
 
+    bool _MIS = false;
     bool _nextEventEstimation = false;
     bool _russianRoulette = false;
     float _gamma = 1;
@@ -264,6 +265,8 @@ void SceneLoader::executeCommand(
 
         if (arguments[0] == "on") {
             _nextEventEstimation = true;
+        } else if (arguments[0] == "mis") {
+            _MIS = true;
         } else {
             _nextEventEstimation = false;
         }
@@ -483,6 +486,7 @@ Scene* SceneLoader::commitSceneData()
     scene->lightStratify = _lightStratify;
     scene->stratifyGridSize = glm::sqrt(_lightSamples);
     scene->samplesPerPixel = _samplesPerPixel;
+    scene->MIS = _MIS;
     scene->nextEventEstimation = _nextEventEstimation;
     scene->russianRoulette = _russianRoulette;
     scene->importanceSampling = _importanceSampling;

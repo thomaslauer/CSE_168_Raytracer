@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <glm/glm.hpp>
+#include <glm/gtx/intersect.hpp>
 
 #include "BRDF.h"
 #include "Constants.h"
@@ -36,7 +37,7 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
 
     if (hit)
     {
-        if (_scene->nextEventEstimation)
+        if (_scene->nextEventEstimation || _scene->MIS)
         {
             // end conditions for NEE
             if (hitMaterial.light)
@@ -57,13 +58,34 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
                 return hitMaterial.emission;
         }
 
-        if (_scene->nextEventEstimation)
-        {
-            outputColor += directLighting(
+        if (_scene->MIS) {
+            float neeWeighting;
+            glm::vec3 neeColor = nextEventEstimation(
                 hitPosition,
                 hitNormal,
                 hitMaterial,
-                origin);
+                origin,
+                neeWeighting);
+
+            float brdfWeighting;
+            glm::vec3 brdfColor = ggxDirect(
+                hitPosition,
+                hitNormal,
+                hitMaterial,
+                origin,
+                brdfWeighting);
+
+            outputColor += neeWeighting * neeColor;
+            //outputColor += brdfWeighting * brdfColor;
+
+        } else if (_scene->nextEventEstimation) {
+            float neePDF;
+            outputColor += nextEventEstimation(
+                hitPosition,
+                hitNormal,
+                hitMaterial,
+                origin,
+                neePDF);
         }
 
         outputColor += indirectLighting(
@@ -73,20 +95,24 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
             origin,
             numBounces + 1);
 
+        /*
         outputColor += hitMaterial.emission;
+        */
     }
 
     return outputColor;
 }
 
-glm::vec3 PathTracerIntegrator::directLighting(
+glm::vec3 PathTracerIntegrator::nextEventEstimation(
     glm::vec3 position,
     glm::vec3 normal,
     material_t material,
-    glm::vec3 origin)
+    glm::vec3 origin,
+    float& pdfNormalization)
 {
     glm::vec3 outputColor = glm::vec3(0);
     int stratifyGridSize = _scene->stratifyGridSize;
+    pdfNormalization = 0;
     for (auto light : _scene->quadLights)
     {
         for (int n = 0; n < _scene->lightSamples; n++)
@@ -110,14 +136,82 @@ glm::vec3 PathTracerIntegrator::directLighting(
             glm::vec3 w_in = glm::normalize(lightPosition - position);
             glm::vec3 w_out = glm::normalize(origin - position);
 
-            glm::vec3 F = brdf(material, w_in, w_out, normal);
+            glm::vec3 F = brdf(normal, w_in, w_out, material);
             float V = occlusion(position, lightPosition);
             float G = geometry(position, normal, lightPosition, lightNormal);
 
             outputColor += lightArea * light.intensity * F * V * G / (float)_scene->lightSamples;
+
+            pdfNormalization += 1.0 - brdfMisWeighting(position, normal, w_in, w_out, material);
         }
     }
+    pdfNormalization /= (float)_scene->quadLights.size();
     return outputColor;
+}
+
+float PathTracerIntegrator::neePDF(glm::vec3 position, glm::vec3 w_in) {
+    float p = 0;
+    for (auto light : _scene->quadLights) {
+        // dummy variable I don't actually use
+        glm::vec2 baryPos;
+
+        // sample the first triangle
+        float distA = 0;
+        bool hitA = glm::intersectRayTriangle(
+            position,
+            w_in, 
+            light.a,
+            light.a + light.ab,
+            light.a + light.ac,
+            baryPos,
+            distA);
+
+        // sample the second triangle
+        float distB = 0;
+        bool hitB = glm::intersectRayTriangle(
+            position,
+            w_in, 
+            light.a + light.ab + light.ac,
+            light.a + light.ab,
+            light.a + light.ac,
+            baryPos,
+            distB);
+        
+        float actualDist;
+        if (hitA && hitB) {
+            actualDist = glm::min(distA, distB);
+        } else if (!hitA && hitB) {
+            actualDist = distB;
+        } else if (hitA && !hitB) {
+            actualDist = distA;
+        } else {
+            // missed both, shouldn't contribute at all
+            continue;
+        }
+
+        float lightArea = glm::length(glm::cross(light.ab, light.ac));
+        glm::vec3 lightNormal = glm::normalize(glm::cross(light.ac, light.ab));
+
+        p += glm::pow(actualDist, 2) / (lightArea * glm::abs(glm::dot(w_in, lightNormal)));
+    }
+    p = p / (float)_scene->quadLights.size();
+
+    //std::cout << p << std::endl;
+    return p;
+}
+
+float PathTracerIntegrator::brdfMisWeighting(glm::vec3 position, glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material) {
+    float neePDFValue = neePDF(position, w_in);
+    float brdfPDFValue = pdf(normal, w_in, w_out, material);
+
+    //std::cout << "NEE PDF is " << neePDFValue << " brdf pdf is " << brdfPDFValue << std::endl;
+
+    float neePDF2 = glm::pow(neePDFValue, 2);
+    float brdfPDF2 = glm::pow(brdfPDFValue, 2);
+
+    float denom = neePDF2 + brdfPDF2;
+
+    return brdfPDF2 / denom;
 }
 
 /**
@@ -137,22 +231,15 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
     int numBounces)
 {
     glm::vec3 outputColor = glm::vec3(0);
-    //glm::vec3 w_out = glm::normalize(position - origin);
     glm::vec3 w_out = glm::normalize(origin - position);
     
     for (int i = 0; i < numRaysPerBounce; i++)
     {
         float pdfNormalization;
-        glm::vec3 w_in;
-        glm::vec3 f;
-        glm::vec3 T;
+        glm::vec3 w_in = importanceSample(normal, w_out, material, pdfNormalization);
 
-        do {
-            w_in = importanceSample(normal, w_out, material, pdfNormalization);
-
-            f = brdf(material, w_in, w_out, normal);
-            T = f * glm::dot(w_in, normal) / pdfNormalization;
-        } while (glm::any(glm::isnan(w_in)) || glm::any(isnan(T)) || glm::any(glm::lessThan(T, glm::vec3(0))));
+        glm::vec3 f = brdf(normal, w_in, w_out, material);
+        glm::vec3 T = f * glm::dot(w_in, normal) / pdfNormalization;
 
         if (_scene->russianRoulette)
         {
@@ -178,17 +265,57 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
     return outputColor / ((float)numRaysPerBounce);
 }
 
-// TODO: rename these parameters to match the generic BRDF versions
+glm::vec3 PathTracerIntegrator::ggxDirect(
+    glm::vec3   position,
+    glm::vec3   normal,
+    material_t  material,
+    glm::vec3   origin,
+    float&      pdfNormalization) 
+{
+    glm::vec3 outputColor = glm::vec3(0);
+    glm::vec3 w_out = glm::normalize(origin - position);
+
+    float dummy;
+    glm::vec3 w_in = importanceSample(normal, w_out, material, dummy);
+    
+    // hit parameters
+    glm::vec3 hitPosition;
+    glm::vec3 hitNormal;
+
+    material_t hitMaterial;
+
+    bool hit = _scene->castRay(position, w_in, &hitPosition, &hitNormal, &hitMaterial);
+
+    if (hit) {
+        glm::vec3 f = brdf(normal, w_in, w_out, material);
+        glm::vec3 T = f * glm::dot(w_in, normal) / dummy;
+        float G = geometry(position, normal, hitPosition, hitNormal);
+        pdfNormalization = brdfMisWeighting(position, normal, w_in, w_out, material);
+        outputColor = T * hitMaterial.emission;
+    }
+
+    return outputColor;
+}
+
 inline glm::vec3 PathTracerIntegrator::brdf(
-    material_t mat,
+    glm::vec3 surfaceNormal,
     glm::vec3 w_in,
     glm::vec3 w_out,
-    glm::vec3 surfaceNormal)
+    material_t mat)
 {
     if (mat.brdf == GGX)
         return _ggxBRDF->brdf(surfaceNormal, w_in, w_out, mat);
     else
         return _phongBRDF->brdf(surfaceNormal, w_in, w_out, mat);
+}
+
+inline float PathTracerIntegrator::pdf(
+    glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material) 
+{
+    if (material.brdf == GGX)
+        return _ggxBRDF->pdf(normal, w_in, w_out, material);
+    else
+        return _phongBRDF->pdf(normal, w_in, w_out, material);
 }
 
 /**

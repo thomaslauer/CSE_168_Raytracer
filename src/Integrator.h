@@ -92,11 +92,12 @@ private:
     // separate functions for direct and indirect lighting components
 
     // direct lighting from light sources
-    glm::vec3 directLighting(
+    glm::vec3 nextEventEstimation(
         glm::vec3   position,
         glm::vec3   normal,
         material_t  material,
-        glm::vec3   origin);
+        glm::vec3   origin,
+        float&      pdfNormalization);
 
     // indirect light calculated as the integral over the unit hemisphere
     glm::vec3 indirectLighting(
@@ -111,10 +112,24 @@ private:
 
     // calculate BRDF for a material
     glm::vec3 brdf(
-        material_t mat,
+        glm::vec3 surfaceNormal,
         glm::vec3 w_in,
         glm::vec3 w_out,
-        glm::vec3 surfaceNormal);
+        material_t mat);
+    
+    float neePDF(glm::vec3 position, glm::vec3 w_in);
+
+    float brdfMisWeighting(glm::vec3 position, glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
+
+    float pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
+
+    // TODO: change this
+    glm::vec3 ggxDirect(
+        glm::vec3   position,
+        glm::vec3   normal,
+        material_t  material,
+        glm::vec3   origin,
+        float&      pdfNormalization);
 
     float geometry(
         glm::vec3 direction,
@@ -123,26 +138,6 @@ private:
         glm::vec3 lightNormal);
 
     float occlusion(glm::vec3 origin, glm::vec3 target);
-
-    glm::vec3 ggxBRDF(
-        material_t mat,
-        glm::vec3 w_in,
-        glm::vec3 w_out,
-        glm::vec3 surfaceNormal);
-
-    float ggxMicrofacetDistribution(
-        material_t mat,
-        float halfAngle);
-
-    float ggxMicrofacetSelfShadowing(
-        material_t mat,
-        glm::vec3 normal,
-        glm::vec3 view);
-
-    glm::vec3 ggxFresnel(
-        material_t mat,
-        glm::vec3 w_in,
-        glm::vec3 halfVector);
 
 public:
     PathTracerIntegrator();
