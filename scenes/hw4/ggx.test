@@ -1,9 +1,9 @@
-size 1280 280
+size 2560 560
 integrator pathtracer
 spp 64
 gamma 2.2
 importancesampling brdf
-nexteventestimation on
+nexteventestimation mis
 russianroulette on
 camera  0 2 15  0 -3 2.5  0 1 0  13
 output ggx.png

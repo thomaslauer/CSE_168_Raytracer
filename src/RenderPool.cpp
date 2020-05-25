@@ -48,7 +48,7 @@ void RenderJob::render(Scene* scene, Integrator* integrator)
 
                 glm::vec3 currentResult = integrator->traceRay(scene->camera.origin, direction) / ((float) scene->samplesPerPixel);
 
-                if (!glm::any(isnan(currentResult))) _result[wy * windowSize.x + wx] += currentResult;
+                if (!glm::any(glm::isnan(currentResult))) _result[wy * windowSize.x + wx] += currentResult;
             }
 
             // adjust gamma

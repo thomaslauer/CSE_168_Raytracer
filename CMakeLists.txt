@@ -24,6 +24,8 @@ endif()
 find_package(embree 3.0 REQUIRED)
 
 set(LIB_SOURCES
+    src/lodepng/lodepng.cpp
+    src/tiny_obj_loader.cpp
     src/Engine.cpp
     src/Scene.cpp
     src/SceneLoader.cpp
@@ -36,7 +38,6 @@ set(LIB_SOURCES
     src/PhongBRDF.cpp
     src/GGXBRDF.cpp
     src/MathUtils.cpp
-    src/lodepng/lodepng.cpp
 )
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 include_directories(src/ ${EMBREE_INCLUDE_DIRS})

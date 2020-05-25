@@ -75,14 +75,8 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
                 origin,
                 brdfWeighting);
             
-            //brdfWeighting = 1 - brdfWeighting;
-
-            //std::cout << brdfWeighting << " " << neeWeighting << std::endl;
-
-            //outputColor += neeWeighting * neeColor;
             outputColor += neeColor;
             outputColor += brdfWeighting * brdfColor;
-            //outputColor += brdfWeighting * glm::vec3(1);
 
         } else if (_scene->nextEventEstimation) {
             float neePDF;
@@ -101,9 +95,7 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
             origin,
             numBounces + 1);
 
-        /*
         outputColor += hitMaterial.emission;
-        */
     }
 
     return outputColor;
@@ -146,7 +138,7 @@ glm::vec3 PathTracerIntegrator::nextEventEstimation(
             float V = occlusion(position, lightPosition);
             float G = geometry(position, normal, lightPosition, lightNormal);
 
-            float currentpdf = neePDF(position, w_in);
+            //float currentpdf = neePDF(position, w_in);
 
             pdfNormalization = brdfMisWeighting(position, normal, w_in, w_out, material, false);
             outputColor += lightArea * light.intensity * F * V * G * pdfNormalization / ((float)_scene->lightSamples);
@@ -304,7 +296,7 @@ glm::vec3 PathTracerIntegrator::ggxDirect(
     if (hit) {
         glm::vec3 f = brdf(normal, w_in, w_out, material);
         glm::vec3 T = f * glm::dot(w_in, normal);
-        float G = geometry(position, normal, hitPosition, hitNormal);
+        //float G = geometry(position, normal, hitPosition, hitNormal);
         pdfNormalization = brdfMisWeighting(position, normal, w_in, w_out, material, true);
         outputColor = T * hitMaterial.emission / pdf(normal, w_in, w_out, material);
     }
