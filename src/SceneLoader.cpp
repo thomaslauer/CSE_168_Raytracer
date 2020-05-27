@@ -51,7 +51,12 @@ private:
         glm::vec3(0.2f, 0.2f, 0.2f),    // ambient
         0.0f,                           // roughness
         PHONG,                          // brdf type
-        false                           // light
+        false,                          // light
+        {   // triangle interpolation data
+            false,                      // do interpolation?
+            {glm::vec3(0), glm::vec3(0), glm::vec3(0)}, // vertex normals
+            glm::vec3(0)                // barycentric coords
+        }
     };
 
     std::string _integratorType = "raytracer";
@@ -138,6 +143,8 @@ void SceneLoader::executeCommand(
         transform = glm::translate(transform, center);
         transform = glm::scale(transform, glm::vec3(radius));
 
+        _curMaterial.triangleData.interpolate = false;
+
         _sphereTransforms.push_back(transform);
 
         _sphereMaterials.push_back(_curMaterial);
@@ -164,7 +171,7 @@ void SceneLoader::executeCommand(
         _vertices.push_back(glm::vec3(curTransform * glm::vec4(_rawVertices[rawIndices.z], 1.0f)));
 
         _triMaterials.push_back(_curMaterial);
-    
+
     } else if (command == "obj") {
         // load OBJ file using tinyobjloader
 
@@ -177,6 +184,51 @@ void SceneLoader::executeCommand(
         std::string err;
 
         tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str());
+
+
+        /*
+        glm::vec3 minPosition = glm::vec3(0.0f);
+        glm::vec3 maxPosition = glm::vec3(0.0f);
+        bool first = true;
+
+        // this set of loops finds the min and max positions for each dimension
+        // I could definitely make this faster
+        for (size_t s = 0; s < shapes.size(); s++)
+        {
+            // Loop over faces(polygon)
+            size_t index_offset = 0;
+            for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
+            {
+                size_t fv = shapes[s].mesh.num_face_vertices[f];
+                // Loop over vertices in the face.
+                for (size_t v = 0; v < fv; v++)
+                {
+                    // access to vertex
+                    tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+                    for (size_t dim = 0; dim < 3; dim++) {
+                        tinyobj::real_t v = attrib.vertices[3 * idx.vertex_index + dim];
+
+                        if (v < minPosition[dim] || first) {
+                            minPosition[dim] = v;
+                        }
+                        if (v > maxPosition[dim] || first) {
+                            maxPosition[dim] = v;
+                        }
+                        first = false;
+                    }
+                }
+            }
+        }
+
+        // calculate the raw mesh size
+        glm::vec3 size = maxPosition - minPosition;
+        glm::vec3 center = (maxPosition + minPosition) / 2.0f;
+        float maximumDimension = glm::max(glm::max(size.x, size.y), size.z);
+
+        std::cout << glm::to_string(size) << " " << maximumDimension << std::endl;
+        std::cout << "min pos " << glm::to_string(minPosition) << std::endl;
+        std::cout << "max pos " << glm::to_string(maxPosition) << std::endl;
+        */
 
         // Loop over shapes
         for (size_t s = 0; s < shapes.size(); s++)
@@ -192,7 +244,6 @@ void SceneLoader::executeCommand(
                     _vertices.size() + 1,
                     _vertices.size() + 2));
 
-                _triMaterials.push_back(_curMaterial);
 
                 // Loop over vertices in the face.
                 for (size_t v = 0; v < fv; v++)
@@ -212,10 +263,13 @@ void SceneLoader::executeCommand(
                     // tinyobj::real_t green = attrib.colors[3*idx.vertex_index+1];
                     // tinyobj::real_t blue = attrib.colors[3*idx.vertex_index+2];
 
+                    glm::vec3 rawVertex = glm::vec3(vx, vy, vz);
+                    //rawVertex = (rawVertex - center) / maximumDimension;
 
-                    _vertices.push_back(glm::vec3(curTransform * glm::vec4(vx, vy, vz, 1.0f)));
+                    _vertices.push_back(glm::vec3(curTransform * glm::vec4(rawVertex, 1.0f)));
                 }
                 index_offset += fv;
+                _triMaterials.push_back(_curMaterial);
 
                 // per-face material
                 shapes[s].mesh.material_ids[f];
@@ -348,6 +402,8 @@ void SceneLoader::executeCommand(
     } else if (command == "brdf") {
         if (arguments[0] == "ggx") {
             _curMaterial.brdf = GGX;
+        } else if (arguments[0] == "volumetric") {
+            _curMaterial.brdf = GGX_VOLUMETRIC;
         } else {
             _curMaterial.brdf = PHONG;
         }

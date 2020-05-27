@@ -41,7 +41,7 @@ private:
 
 public:
 
-    virtual glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);
+    glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);
 
 };
 
@@ -72,7 +72,7 @@ private:
 
 public:
     MonteCarloDirectIntegrator();
-    virtual glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);
+    glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);
 };
 
 
@@ -142,5 +142,5 @@ private:
 public:
     PathTracerIntegrator();
     void setScene(Scene* scene);
-    virtual glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);
+    glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction);
 };

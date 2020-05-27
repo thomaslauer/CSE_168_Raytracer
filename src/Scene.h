@@ -18,9 +18,15 @@ struct camera_t {
 
 typedef enum brdf_t {
     PHONG,
-    GGX
+    GGX,
+    GGX_VOLUMETRIC
 } brdf_t;
 
+struct triangleData_t {
+    bool interpolate;
+    glm::vec3 normals[3];
+    glm::vec3 barycentricCoords;
+};
 
 struct material_t {
     glm::vec3 diffuse;
@@ -31,6 +37,7 @@ struct material_t {
     float roughness;
     brdf_t brdf;
     bool light;
+    triangleData_t triangleData;
 };
 
 struct directionalLight_t {
