@@ -35,6 +35,7 @@ struct material_t {
     glm::vec3 emission;
     glm::vec3 ambient;
     float roughness;
+    float ior;
     brdf_t brdf;
     bool light;
     triangleData_t triangleData;

@@ -50,6 +50,7 @@ private:
         glm::vec3(0.0f),                // emission
         glm::vec3(0.2f, 0.2f, 0.2f),    // ambient
         0.0f,                           // roughness
+        1.0f,                           // index of refraction
         PHONG,                          // brdf type
         false,                          // light
         {   // triangle interpolation data
@@ -354,6 +355,10 @@ void SceneLoader::executeCommand(
     } else if (command == "roughness") {
 
         _curMaterial.roughness = std::stof(arguments[0]);
+
+    } else if (command == "ior") {
+
+        _curMaterial.ior = std::stof(arguments[0]);
 
     } else if (command == "integrator") {
 

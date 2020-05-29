@@ -1,7 +1,7 @@
 size 1280 1280
 #size 480 480
 integrator pathtracer
-spp 640
+spp 256
 gamma 2.2
 importancesampling brdf
 nexteventestimation on
@@ -36,11 +36,12 @@ tri 0 1 2
 tri 3 2 1
 
 # back wall
+diffuse 0.8 0.1 0.1
 tri 6 5 4
 tri 5 6 7
 
-# sphere default material settings
-brdf ggx
+brdf volumetric
+ior 1.2
 
 
 pushTransform

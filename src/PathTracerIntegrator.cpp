@@ -9,6 +9,8 @@
 #include "Constants.h"
 #include "MathUtils.h"
 
+#define EPSILON 0.1f
+
 thread_local std::default_random_engine PathTracerIntegrator::rng = std::default_random_engine((std::random_device())());
 
 PathTracerIntegrator::PathTracerIntegrator()
@@ -49,7 +51,7 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
                     return glm::vec3(0);
                 }
             }
-            if (!_scene->russianRoulette && numBounces >= _scene->maxDepth)
+            if (numBounces >= _scene->maxDepth)
                 return glm::vec3(0);
         }
         else
@@ -58,44 +60,63 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
                 return hitMaterial.emission;
         }
 
-        if (_scene->MIS) {
-            float neeWeighting;
-            glm::vec3 neeColor = nextEventEstimation(
-                hitPosition,
-                hitNormal,
-                hitMaterial,
-                origin,
-                neeWeighting);
+        if (hitMaterial.brdf == GGX_VOLUMETRIC) {
+            // special handling for volumetrics
 
-            float brdfWeighting;
-            glm::vec3 brdfColor = ggxDirect(
-                hitPosition,
-                hitNormal,
-                hitMaterial,
-                origin,
-                brdfWeighting);
-            
-            outputColor += neeColor;
-            outputColor += brdfWeighting * brdfColor;
+            glm::vec3 newDirection;
 
-        } else if (_scene->nextEventEstimation) {
-            float neePDF;
-            outputColor += nextEventEstimation(
+            if (glm::dot(direction, hitNormal) < 0) {
+                newDirection = calculateRefraction(hitNormal, direction, 1.0f, hitMaterial.ior);
+            } else {
+                newDirection = calculateRefraction(-hitNormal, direction, hitMaterial.ior, 1.0f);
+            }
+
+            //std::cout << glm::to_string(newDirection) << " " << glm::dot(newDirection, hitNormal) << std::endl;
+
+            glm::vec3 transmission = traceRay(hitPosition + newDirection * EPSILON, newDirection, numBounces + 1);
+            return transmission;
+
+        } else {
+            // solid (boring) surfaces
+            if (_scene->MIS) {
+                float neeWeighting;
+                glm::vec3 neeColor = nextEventEstimation(
+                    hitPosition,
+                    hitNormal,
+                    hitMaterial,
+                    origin,
+                    neeWeighting);
+
+                float brdfWeighting;
+                glm::vec3 brdfColor = ggxDirect(
+                    hitPosition,
+                    hitNormal,
+                    hitMaterial,
+                    origin,
+                    brdfWeighting);
+                
+                outputColor += neeColor;
+                outputColor += brdfWeighting * brdfColor;
+
+            } else if (_scene->nextEventEstimation) {
+                float neePDF;
+                outputColor += nextEventEstimation(
+                    hitPosition,
+                    hitNormal,
+                    hitMaterial,
+                    origin,
+                    neePDF);
+            }
+
+            outputColor += indirectLighting(
                 hitPosition,
                 hitNormal,
                 hitMaterial,
                 origin,
-                neePDF);
+                numBounces + 1);
+
+            outputColor += hitMaterial.emission;
         }
-
-        outputColor += indirectLighting(
-            hitPosition,
-            hitNormal,
-            hitMaterial,
-            origin,
-            numBounces + 1);
-
-        outputColor += hitMaterial.emission;
     }
 
     return outputColor;

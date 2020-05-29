@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include <iostream>
+
 glm::vec3 sphereCoordsToVector(float theta, float phi, glm::vec3 samplingSpaceCenter) {
     // a sample over the unit hemisphere
     glm::vec3 s = glm::vec3(glm::cos(phi) * glm::sin(theta), glm::sin(phi) * glm::sin(theta), glm::cos(theta));
@@ -28,4 +30,31 @@ float averageVector(glm::vec3 vec) {
     avg += vec.y;
     avg += vec.z;
     return avg / 3.0f;
+}
+
+glm::vec3 calculateRefraction(glm::vec3 halfVector, glm::vec3 w, float ior_in, float ior_out) {
+
+    glm::vec3 refraction = glm::refract(w, halfVector, ior_in / ior_out);
+    if (refraction == glm::vec3(0)) {
+        return glm::reflect(w, halfVector);
+    }
+    return refraction;
+
+    /*
+    // TODO: Check direction on w
+    float cosTheta1 = glm::dot(halfVector, w);
+    if (cosTheta1 < 0) cosTheta1 = -cosTheta1;
+
+    float sinTheta2 = (ior_in / ior_out) * glm::sqrt(1 - glm::pow(cosTheta1, 2));
+
+    float radicand = 1 - glm::pow(ior_in / ior_out, 2) * (1 - glm::pow(cosTheta1, 2));
+
+    if (radicand < 0) {
+        // total internal reflection, make sure this isn't bugged
+        return glm::reflect(w, halfVector);
+    }
+
+    float cosTheta2 = glm::sqrt(radicand);
+    return glm::vec3(0);
+    */
 }
