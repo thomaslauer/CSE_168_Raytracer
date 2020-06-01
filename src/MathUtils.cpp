@@ -1,8 +1,10 @@
 #include "MathUtils.h"
 
 #include <glm/glm.hpp>
-
 #include <iostream>
+
+#include "Constants.h"
+#include "Scene.h"
 
 glm::vec3 sphereCoordsToVector(float theta, float phi, glm::vec3 samplingSpaceCenter) {
     // a sample over the unit hemisphere
@@ -40,21 +42,24 @@ glm::vec3 calculateRefraction(glm::vec3 halfVector, glm::vec3 w, float ior_in, f
     }
     return refraction;
 
-    /*
-    // TODO: Check direction on w
-    float cosTheta1 = glm::dot(halfVector, w);
-    if (cosTheta1 < 0) cosTheta1 = -cosTheta1;
+}
 
-    float sinTheta2 = (ior_in / ior_out) * glm::sqrt(1 - glm::pow(cosTheta1, 2));
+float microfacetDistribution(float halfAngle, material_t material) {
+    float a_squared = material.roughness * material.roughness;
 
-    float radicand = 1 - glm::pow(ior_in / ior_out, 2) * (1 - glm::pow(cosTheta1, 2));
+    float denominator = PI * glm::pow(glm::cos(halfAngle), 4.0f) * glm::pow(a_squared + glm::pow(glm::tan(halfAngle), 2.0f), 2.0f);
+    return a_squared / denominator;
+}
 
-    if (radicand < 0) {
-        // total internal reflection, make sure this isn't bugged
-        return glm::reflect(w, halfVector);
-    }
+float microfacetSelfShadowing(glm::vec3 normal, glm::vec3 view, material_t material) {
+    if (glm::dot(view, normal) <= 0)
+        return 0;
 
-    float cosTheta2 = glm::sqrt(radicand);
-    return glm::vec3(0);
-    */
+    float thetaV = glm::acos(glm::dot(view, normal));
+
+    return 2.0f / (1.0f + glm::sqrt(glm::max(0.0f, 1.0f + glm::pow(material.roughness, 2.0f) * glm::pow(glm::tan(thetaV), 2.0f))));
+}
+
+glm::vec3 fresnel(glm::vec3 w_in, glm::vec3 halfVector, material_t material) {
+    return material.specular + (glm::vec3(1.0f) - material.specular) * glm::pow(1.0f - glm::dot(w_in, halfVector), 5.0f);
 }

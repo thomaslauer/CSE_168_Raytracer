@@ -88,13 +88,13 @@ popTransform
 
 ior 1.4
 pushTransform
-brdf volumetric
+brdf ggx
 
 diffuse 0.4 0.4 0.4
 specular 0.4 0.4 0.4
-roughness 1
+roughness 0.5
 
-translate 0 0.7 -0.5
+translate 0 0.7 0
 scale 0.5 0.5 0.5
 obj ../res/monkey.obj
 popTransform
@@ -104,13 +104,13 @@ brdf volumetric
 
 diffuse 0 0 0 
 specular 0.9 0.9 0.9
-roughness 0.3
+roughness 0.02
 
 ior 2
 
 translate 0 0.8 1
 scale 1.5 1.5 0.02
-#sphere 0 0 0 0.3
+sphere 0 0 0 0.3
 popTransform
 
 popTransform

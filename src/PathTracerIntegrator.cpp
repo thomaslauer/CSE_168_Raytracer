@@ -9,7 +9,7 @@
 #include "Constants.h"
 #include "MathUtils.h"
 
-#define EPSILON 0.1f
+#define EPSILON 0.0001f
 
 thread_local std::default_random_engine PathTracerIntegrator::rng = std::default_random_engine((std::random_device())());
 
@@ -56,7 +56,7 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
         }
         else
         {
-            if (hitMaterial.light || (!_scene->russianRoulette && numBounces > _scene->maxDepth))
+            if (hitMaterial.light || numBounces > _scene->maxDepth)
                 return hitMaterial.emission;
         }
 
@@ -65,15 +65,20 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
 
             glm::vec3 newDirection;
 
-            if (glm::dot(direction, hitNormal) < 0) {
-                newDirection = calculateRefraction(hitNormal, direction, 1.0f, hitMaterial.ior);
+            float epsilon1 = gen(rng);
+            float epsilon2 = gen(rng);
+            float theta = glm::atan(hitMaterial.roughness * glm::sqrt(epsilon1), glm::sqrt(1 - epsilon1));
+            float phi = TWO_PI * epsilon2;
+
+            glm::vec3 halfVector = sphereCoordsToVector(theta, phi, hitNormal);
+
+            if (glm::dot(direction, halfVector) < 0) {
+                newDirection = calculateRefraction(halfVector, direction, 1.0f, hitMaterial.ior);
             } else {
-                newDirection = calculateRefraction(-hitNormal, direction, hitMaterial.ior, 1.0f);
+                newDirection = calculateRefraction(-halfVector, direction, hitMaterial.ior, 1.0f);
             }
 
-            //std::cout << glm::to_string(newDirection) << " " << glm::dot(newDirection, hitNormal) << std::endl;
-
-            glm::vec3 transmission = traceRay(hitPosition + newDirection * EPSILON, newDirection, numBounces + 1);
+            glm::vec3 transmission = traceRay(hitPosition, newDirection, numBounces + 1);
             return transmission;
 
         } else {

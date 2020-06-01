@@ -82,23 +82,3 @@ float GGXBRDF::pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t
     return diffuseTerm + ggxTerm;
 }
 
-
-inline float GGXBRDF::microfacetDistribution(float halfAngle, material_t material) {
-    float a_squared = material.roughness * material.roughness;
-
-    float denominator = PI * glm::pow(glm::cos(halfAngle), 4.0f) * glm::pow(a_squared + glm::pow(glm::tan(halfAngle), 2.0f), 2.0f);
-    return a_squared / denominator;
-}
-
-inline float GGXBRDF::microfacetSelfShadowing(glm::vec3 normal, glm::vec3 view, material_t material) {
-    if (glm::dot(view, normal) <= 0)
-        return 0;
-
-    float thetaV = glm::acos(glm::dot(view, normal));
-
-    return 2.0f / (1.0f + glm::sqrt(glm::max(0.0f, 1.0f + glm::pow(material.roughness, 2.0f) * glm::pow(glm::tan(thetaV), 2.0f))));
-}
-
-inline glm::vec3 GGXBRDF::fresnel(glm::vec3 w_in, glm::vec3 halfVector, material_t material) {
-    return material.specular + (glm::vec3(1.0f) - material.specular) * glm::pow(1.0f - glm::dot(w_in, halfVector), 5.0f);
-}

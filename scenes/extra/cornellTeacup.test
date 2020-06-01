@@ -1,8 +1,8 @@
 #Cornell Box
-#size 480 480
-size 2000 2000
+size 480 480
+#size 2000 2000
 integrator pathtracer
-spp 64
+spp 640
 importancesampling brdf
 nexteventestimation on
 russianroulette on
@@ -97,21 +97,15 @@ obj ../res/shrek_large.obj
 popTransform
 
 pushTransform
-translate -0.4 0 0 
 rotate 0 1 0 20
-scale 0.15 0.15 0.15
 
+brdf volumetric
 diffuse 0.7 0.7 0.7
 specular 0.2 0.2 0.2
-roughness 0.5
-obj ../res/teapot.obj
+roughness 0.2
+ior 1.7
+obj ../res/TeaCup.obj
 
-popTransform
-
-pushTransform
-translate 0 0.5 0
-scale 0.5 0.5 0.5
-#obj ../res/monkey.obj
 popTransform
 
 popTransform
