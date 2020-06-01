@@ -77,7 +77,7 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
                 hitMaterial,
                 origin,
                 brdfWeighting);
-            
+
             outputColor += neeColor;
             outputColor += brdfWeighting * brdfColor;
 
@@ -268,12 +268,12 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
             {
                 // boost ray
                 float boost = 1.0f / (1.0f - p);
-                outputColor += boost * T * traceRay(position, w_in, numBounces);
+                outputColor += boost * T * traceRay(position + w_in * EPSILON, w_in, numBounces);
             }
         }
         else
         {
-            outputColor += T * traceRay(position, w_in, numBounces);
+            outputColor += T * traceRay(position + w_in * EPSILON, w_in, numBounces);
         }
     }
     return outputColor / ((float)numRaysPerBounce);

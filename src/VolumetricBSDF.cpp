@@ -7,18 +7,20 @@
 #include "Constants.h"
 
 glm::vec3 VolumetricBSDF::brdf(
-    glm::vec3 normal, 
-    glm::vec3 w_in, 
-    glm::vec3 w_out, 
+    glm::vec3 normal,
+    glm::vec3 w_in,
+    glm::vec3 w_out,
     material_t material)
 {
+    glm::vec3 halfVector = glm::normalize(w_in + w_out);
+
     return glm::vec3(1);
 }
 
 glm::vec3 VolumetricBSDF::importanceSample(
-    glm::vec3 normal, 
-    glm::vec3 w_out, 
-    material_t material, 
+    glm::vec3 normal,
+    glm::vec3 w_out,
+    material_t material,
     float& pdfNormalization)
 {
     glm::vec3 newDirection;
@@ -30,7 +32,7 @@ glm::vec3 VolumetricBSDF::importanceSample(
 
     glm::vec3 halfVector = sphereCoordsToVector(theta, phi, normal);
 
-    if (glm::dot(w_out, halfVector) < 0)
+    if (glm::dot(w_out, halfVector) > 0)
     {
         // front face hit
         newDirection = calculateRefraction(halfVector, w_out, 1.0f, material.ior);
@@ -46,9 +48,9 @@ glm::vec3 VolumetricBSDF::importanceSample(
 }
 
 float VolumetricBSDF::pdf(
-    glm::vec3 normal, 
-    glm::vec3 w_in, 
-    glm::vec3 w_out, 
+    glm::vec3 normal,
+    glm::vec3 w_in,
+    glm::vec3 w_out,
     material_t material)
 {
     return 1;
