@@ -37,6 +37,7 @@ set(LIB_SOURCES
     src/BRDF.cpp
     src/PhongBRDF.cpp
     src/GGXBRDF.cpp
+    src/VolumetricBSDF.cpp
     src/MathUtils.cpp
 )
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)

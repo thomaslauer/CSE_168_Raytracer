@@ -86,6 +86,7 @@ private:
 
     BRDF* _phongBRDF;
     BRDF* _ggxBRDF;
+    BRDF* _volumetricBSDF;
 
     glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction, int numBounces);
 

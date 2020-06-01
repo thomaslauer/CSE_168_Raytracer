@@ -19,6 +19,7 @@ PathTracerIntegrator::PathTracerIntegrator()
 
     _phongBRDF = new PhongBRDF();
     _ggxBRDF = new GGXBRDF();
+    _volumetricBSDF = new VolumetricBSDF();
 }
 
 glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction)
@@ -60,69 +61,47 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
                 return hitMaterial.emission;
         }
 
-        if (hitMaterial.brdf == GGX_VOLUMETRIC) {
-            // special handling for volumetrics
-
-            glm::vec3 newDirection;
-
-            float epsilon1 = gen(rng);
-            float epsilon2 = gen(rng);
-            float theta = glm::atan(hitMaterial.roughness * glm::sqrt(epsilon1), glm::sqrt(1 - epsilon1));
-            float phi = TWO_PI * epsilon2;
-
-            glm::vec3 halfVector = sphereCoordsToVector(theta, phi, hitNormal);
-
-            if (glm::dot(direction, halfVector) < 0) {
-                newDirection = calculateRefraction(halfVector, direction, 1.0f, hitMaterial.ior);
-            } else {
-                newDirection = calculateRefraction(-halfVector, direction, hitMaterial.ior, 1.0f);
-            }
-
-            glm::vec3 transmission = traceRay(hitPosition, newDirection, numBounces + 1);
-            return transmission;
-
-        } else {
-            // solid (boring) surfaces
-            if (_scene->MIS) {
-                float neeWeighting;
-                glm::vec3 neeColor = nextEventEstimation(
-                    hitPosition,
-                    hitNormal,
-                    hitMaterial,
-                    origin,
-                    neeWeighting);
-
-                float brdfWeighting;
-                glm::vec3 brdfColor = ggxDirect(
-                    hitPosition,
-                    hitNormal,
-                    hitMaterial,
-                    origin,
-                    brdfWeighting);
-                
-                outputColor += neeColor;
-                outputColor += brdfWeighting * brdfColor;
-
-            } else if (_scene->nextEventEstimation) {
-                float neePDF;
-                outputColor += nextEventEstimation(
-                    hitPosition,
-                    hitNormal,
-                    hitMaterial,
-                    origin,
-                    neePDF);
-            }
-
-            outputColor += indirectLighting(
+        if (_scene->MIS) {
+            float neeWeighting;
+            glm::vec3 neeColor = nextEventEstimation(
                 hitPosition,
                 hitNormal,
                 hitMaterial,
                 origin,
-                numBounces + 1);
+                neeWeighting);
 
-            outputColor += hitMaterial.emission;
+            float brdfWeighting;
+            glm::vec3 brdfColor = ggxDirect(
+                hitPosition,
+                hitNormal,
+                hitMaterial,
+                origin,
+                brdfWeighting);
+            
+            outputColor += neeColor;
+            outputColor += brdfWeighting * brdfColor;
+
+        } else if (_scene->nextEventEstimation) {
+            float neePDF;
+            outputColor += nextEventEstimation(
+                hitPosition,
+                hitNormal,
+                hitMaterial,
+                origin,
+                neePDF);
         }
+
+        outputColor += indirectLighting(
+            hitPosition,
+            hitNormal,
+            hitMaterial,
+            origin,
+            numBounces + 1);
+
+        outputColor += hitMaterial.emission;
     }
+
+    //std::cout << glm::to_string(outputColor) << std::endl;
 
     return outputColor;
 }
@@ -268,11 +247,13 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
 
     for (int i = 0; i < numRaysPerBounce; i++)
     {
-        float pdfNormalization;
+        float pdfNormalization = 1;
         glm::vec3 w_in = importanceSample(normal, w_out, material, pdfNormalization);
 
         glm::vec3 f = brdf(normal, w_in, w_out, material);
-        glm::vec3 T = f * glm::dot(w_in, normal) / pdfNormalization;
+        glm::vec3 T = f * glm::abs(glm::dot(w_in, normal)) / pdfNormalization;
+
+        //if(material.brdf == GGX_VOLUMETRIC) std::cout << glm::to_string(f) << glm::to_string(T) << std::endl;
 
         if (_scene->russianRoulette)
         {
@@ -321,7 +302,7 @@ glm::vec3 PathTracerIntegrator::ggxDirect(
 
     if (hit) {
         glm::vec3 f = brdf(normal, w_in, w_out, material);
-        glm::vec3 T = f * glm::dot(w_in, normal);
+        glm::vec3 T = f * glm::abs(glm::dot(w_in, normal));
         //float G = geometry(position, normal, hitPosition, hitNormal);
         pdfNormalization = brdfMisWeighting(position, normal, w_in, w_out, material, true);
         outputColor = T * hitMaterial.emission / pdf(normal, w_in, w_out, material);
@@ -338,6 +319,8 @@ inline glm::vec3 PathTracerIntegrator::brdf(
 {
     if (mat.brdf == GGX)
         return _ggxBRDF->brdf(surfaceNormal, w_in, w_out, mat);
+    else if (mat.brdf == GGX_VOLUMETRIC)
+        return _volumetricBSDF->brdf(surfaceNormal, w_in, w_out, mat);
     else
         return _phongBRDF->brdf(surfaceNormal, w_in, w_out, mat);
 }
@@ -347,6 +330,8 @@ inline float PathTracerIntegrator::pdf(
 {
     if (material.brdf == GGX)
         return _ggxBRDF->pdf(normal, w_in, w_out, material);
+    else if (material.brdf == GGX_VOLUMETRIC)
+        return _volumetricBSDF->pdf(normal, w_in, w_out, material);
     else
         return _phongBRDF->pdf(normal, w_in, w_out, material);
 }
@@ -362,8 +347,8 @@ float PathTracerIntegrator::geometry(
 {
     glm::vec3 lightVector = glm::normalize(lightPoint - surfacePoint);
 
-    float cosThetai = glm::dot(lightVector, surfaceNormal);
-    float cosThetal = glm::dot(lightVector, -lightNormal);
+    float cosThetai = glm::abs(glm::dot(lightVector, surfaceNormal));
+    float cosThetal = glm::abs(glm::dot(lightVector, -lightNormal));
 
     cosThetai = (cosThetai < 0) ? 0 : cosThetai;
     cosThetal = (cosThetal < 0) ? 0 : cosThetal;
@@ -406,14 +391,15 @@ glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_o
         phi = TWO_PI * epsilon2;
 
         w_in = sphereCoordsToVector(theta, phi, samplingSpaceCenter);
-        pdfNormalization = glm::dot(normal, w_in) / PI;
+        pdfNormalization = glm::abs(glm::dot(normal, w_in)) / PI;
 
     } else if (_scene->importanceSampling == BRDF_SAMPLING) {
-        if (material.brdf == GGX) {
+        if (material.brdf == GGX)
             w_in = _ggxBRDF->importanceSample(normal, w_out, material, pdfNormalization);
-        } else {
+        else if (material.brdf == GGX_VOLUMETRIC)
+            w_in = _volumetricBSDF->importanceSample(normal, w_out, material, pdfNormalization);
+        else
             w_in = _phongBRDF->importanceSample(normal, w_out, material, pdfNormalization);
-        }
     } else {
         // hemisphere sampling
         theta = glm::acos(epsilon1);
@@ -432,4 +418,5 @@ void PathTracerIntegrator::setScene(Scene* scene) {
 
     _phongBRDF->setScene(scene);
     _ggxBRDF->setScene(scene);
+    _volumetricBSDF->setScene(scene);
 }

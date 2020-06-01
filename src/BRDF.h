@@ -49,7 +49,7 @@ public:
     float pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
 };
 
-class VolumetricBRDF : public BRDF {
+class VolumetricBSDF : public BRDF {
 public:
     glm::vec3 brdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
     glm::vec3 importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float& pdfNormalization);
