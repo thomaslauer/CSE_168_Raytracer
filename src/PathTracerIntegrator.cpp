@@ -81,7 +81,7 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
             outputColor += neeColor;
             outputColor += brdfWeighting * brdfColor;
 
-        } else if (_scene->nextEventEstimation) {
+        } else if (_scene->nextEventEstimation && hitMaterial.brdf != GGX_VOLUMETRIC) {
             float neePDF;
             outputColor += nextEventEstimation(
                 hitPosition,
