@@ -12,7 +12,7 @@ glm::vec3 VolumetricBSDF::brdf(
     glm::vec3 w_out,
     material_t material)
 {
-    glm::vec3 halfVector = glm::normalize(w_in + w_out);
+    //glm::vec3 halfVector = glm::normalize(w_in + w_out);
 
     return glm::vec3(1);
 }
@@ -35,15 +35,15 @@ glm::vec3 VolumetricBSDF::importanceSample(
     if (glm::dot(w_out, halfVector) > 0)
     {
         // front face hit
-        newDirection = calculateRefraction(halfVector, w_out, 1.0f, material.ior);
+        newDirection = calculateRefraction(halfVector, -w_out, 1.0f, material.ior);
     }
     else
     {
         // back face hit
-        newDirection = calculateRefraction(-halfVector, w_out, material.ior, 1.0f);
+        newDirection = calculateRefraction(-halfVector, -w_out, material.ior, 1.0f);
     }
 
-    pdfNormalization = 1;
+    pdfNormalization = glm::abs(glm::dot(normal, w_out));
     return newDirection;
 }
 
