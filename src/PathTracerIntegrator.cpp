@@ -40,15 +40,25 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
 
     if (hit)
     {
+        glm::vec3 w_out = -direction;
+        float ior_in = 1.4;
+        float ior_out = 1;
+
+        glm::vec3 w_in = glm::reflect(-w_out, hitNormal);
+
+        return glm::vec3(1) * fresnelIOR(w_in, hitNormal, ior_in, ior_out);
+
         if (_scene->nextEventEstimation || _scene->MIS)
         {
             // end conditions for NEE
             if (hitMaterial.light)
             {
-                if (numBounces == 0 && glm::dot(hitNormal, direction) <= 0) {
+                if (numBounces == 0 && glm::dot(hitNormal, direction) <= 0)
+                {
                     outputColor += hitMaterial.emission;
                 }
-                else {
+                else
+                {
                     return glm::vec3(0);
                 }
             }
@@ -61,7 +71,8 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
                 return hitMaterial.emission;
         }
 
-        if (_scene->MIS) {
+        if (_scene->MIS)
+        {
             float neeWeighting;
             glm::vec3 neeColor = nextEventEstimation(
                 hitPosition,
@@ -80,8 +91,9 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
 
             outputColor += neeColor;
             outputColor += brdfWeighting * brdfColor;
-
-        } else if (_scene->nextEventEstimation && hitMaterial.brdf != GGX_VOLUMETRIC) {
+        }
+        else if (_scene->nextEventEstimation && hitMaterial.brdf != GGX_VOLUMETRIC)
+        {
             float neePDF;
             outputColor += nextEventEstimation(
                 hitPosition,
@@ -111,7 +123,7 @@ glm::vec3 PathTracerIntegrator::nextEventEstimation(
     glm::vec3 normal,
     material_t material,
     glm::vec3 origin,
-    float& pdfNormalization)
+    float &pdfNormalization)
 {
     glm::vec3 outputColor = glm::vec3(0);
     int stratifyGridSize = _scene->stratifyGridSize;
@@ -153,9 +165,11 @@ glm::vec3 PathTracerIntegrator::nextEventEstimation(
     return outputColor;
 }
 
-float PathTracerIntegrator::neePDF(glm::vec3 position, glm::vec3 w_in) {
+float PathTracerIntegrator::neePDF(glm::vec3 position, glm::vec3 w_in)
+{
     float p = 0;
-    for (auto light : _scene->quadLights) {
+    for (auto light : _scene->quadLights)
+    {
         // dummy variable I don't actually use
         glm::vec2 baryPos;
 
@@ -185,13 +199,20 @@ float PathTracerIntegrator::neePDF(glm::vec3 position, glm::vec3 w_in) {
             distB);
 
         float actualDist;
-        if (hitA && hitB) {
+        if (hitA && hitB)
+        {
             actualDist = glm::max(distA, distB);
-        } else if (!hitA && hitB) {
+        }
+        else if (!hitA && hitB)
+        {
             actualDist = distB;
-        } else if (hitA && !hitB) {
+        }
+        else if (hitA && !hitB)
+        {
             actualDist = distA;
-        } else {
+        }
+        else
+        {
             // missed both, shouldn't contribute at all
             continue;
         }
@@ -206,7 +227,8 @@ float PathTracerIntegrator::neePDF(glm::vec3 position, glm::vec3 w_in) {
     return p;
 }
 
-float PathTracerIntegrator::brdfMisWeighting(glm::vec3 position, glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material, bool use_brdf) {
+float PathTracerIntegrator::brdfMisWeighting(glm::vec3 position, glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material, bool use_brdf)
+{
     float neePDFValue = neePDF(position, w_in);
     float brdfPDFValue = pdf(normal, w_in, w_out, material);
 
@@ -219,9 +241,12 @@ float PathTracerIntegrator::brdfMisWeighting(glm::vec3 position, glm::vec3 norma
 
     float denom = neePDF2 + brdfPDF2;
 
-    if (use_brdf) {
+    if (use_brdf)
+    {
         return brdfPDF2 / denom;
-    } else {
+    }
+    else
+    {
         return neePDF2 / denom;
     }
 }
@@ -280,11 +305,11 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
 }
 
 glm::vec3 PathTracerIntegrator::ggxDirect(
-    glm::vec3   position,
-    glm::vec3   normal,
-    material_t  material,
-    glm::vec3   origin,
-    float&      pdfNormalization)
+    glm::vec3 position,
+    glm::vec3 normal,
+    material_t material,
+    glm::vec3 origin,
+    float &pdfNormalization)
 {
     glm::vec3 outputColor = glm::vec3(0);
     glm::vec3 w_out = glm::normalize(origin - position);
@@ -300,7 +325,8 @@ glm::vec3 PathTracerIntegrator::ggxDirect(
 
     bool hit = _scene->castRay(position, w_in, &hitPosition, &hitNormal, &hitMaterial);
 
-    if (hit) {
+    if (hit)
+    {
         glm::vec3 f = brdf(normal, w_in, w_out, material);
         glm::vec3 T = f * glm::abs(glm::dot(w_in, normal));
         //float G = geometry(position, normal, hitPosition, hitNormal);
@@ -369,8 +395,8 @@ float PathTracerIntegrator::occlusion(glm::vec3 origin, glm::vec3 target)
     return 1;
 }
 
-
-glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float &pdfNormalization) {
+glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float &pdfNormalization)
+{
     glm::vec3 w_in;
 
     float epsilon1 = gen(rng);
@@ -385,22 +411,26 @@ glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_o
     glm::vec3 samplingSpaceCenter = normal;
     //glm::vec3 reflection = (2 * glm::dot(normal, w_out) * normal - w_out);
 
-    if (_scene->importanceSampling == COSINE_SAMPLING) {
+    if (_scene->importanceSampling == COSINE_SAMPLING)
+    {
 
         theta = glm::acos(glm::sqrt(epsilon1));
         phi = TWO_PI * epsilon2;
 
         w_in = sphereCoordsToVector(theta, phi, samplingSpaceCenter);
         pdfNormalization = glm::abs(glm::dot(normal, w_in)) / PI;
-
-    } else if (_scene->importanceSampling == BRDF_SAMPLING) {
+    }
+    else if (_scene->importanceSampling == BRDF_SAMPLING)
+    {
         if (material.brdf == GGX)
             w_in = _ggxBRDF->importanceSample(normal, w_out, material, pdfNormalization);
         else if (material.brdf == GGX_VOLUMETRIC)
             w_in = _volumetricBSDF->importanceSample(normal, w_out, material, pdfNormalization);
         else
             w_in = _phongBRDF->importanceSample(normal, w_out, material, pdfNormalization);
-    } else {
+    }
+    else
+    {
         // hemisphere sampling
         theta = glm::acos(epsilon1);
         phi = TWO_PI * epsilon2;
@@ -413,7 +443,8 @@ glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_o
     return w_in;
 }
 
-void PathTracerIntegrator::setScene(Scene* scene) {
+void PathTracerIntegrator::setScene(Scene *scene)
+{
     _scene = scene;
 
     _phongBRDF->setScene(scene);

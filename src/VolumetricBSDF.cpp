@@ -12,16 +12,16 @@ glm::vec3 VolumetricBSDF::brdf(
     glm::vec3 w_out,
     material_t material)
 {
-    //glm::vec3 halfVector = glm::normalize(w_in + w_out);
+    glm::vec3 halfVector = glm::normalize(w_in + w_out);
 
-    return glm::vec3(1);
+    return fresnel(w_in, halfVector, material);
 }
 
 glm::vec3 VolumetricBSDF::importanceSample(
     glm::vec3 normal,
     glm::vec3 w_out,
     material_t material,
-    float& pdfNormalization)
+    float &pdfNormalization)
 {
     glm::vec3 newDirection;
 
@@ -43,7 +43,7 @@ glm::vec3 VolumetricBSDF::importanceSample(
         newDirection = calculateRefraction(-halfVector, -w_out, material.ior, 1.0f);
     }
 
-    pdfNormalization = glm::abs(glm::dot(normal, w_out));
+    pdfNormalization = glm::min(glm::abs(glm::dot(normal, w_out)), 1.0f);
     return newDirection;
 }
 
