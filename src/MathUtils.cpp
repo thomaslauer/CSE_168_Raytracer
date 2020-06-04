@@ -78,10 +78,10 @@ glm::vec3 calculateRefraction(glm::vec3 halfVector, glm::vec3 w, float ior_in, f
  * This was stolen from the Walter et al. paper on microfacet refraction models.
  * I needed it because our fresnel term does not use actual indices of refraction.
  */
-float fresnelIOR(glm::vec3 w_in, glm::vec3 normal, float ior_in, float ior_out)
+float fresnelIOR(glm::vec3 w_out, glm::vec3 normal, float ior_in, float ior_out)
 {
 
-    float c = glm::abs(glm::dot(w_in, normal));
+    float c = glm::abs(glm::dot(w_out, normal));
 
     float g_radicand = glm::pow(ior_in, 2) / glm::pow(ior_out, 2) - 1 + glm::pow(c, 2);
 
@@ -95,4 +95,9 @@ float fresnelIOR(glm::vec3 w_in, glm::vec3 normal, float ior_in, float ior_out)
 
     float f = glm::pow(g - c, 2) / (2 * glm::pow(g + c, 2)) * (1 + glm::pow(c * (c + g) - 1, 2) / glm::pow(c * (c - g) + 1, 2));
     return f;
+}
+
+float absdot(glm::vec3 a, glm::vec3 b)
+{
+    return glm::abs(glm::dot(a, b));
 }

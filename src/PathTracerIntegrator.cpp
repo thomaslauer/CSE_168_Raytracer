@@ -40,13 +40,6 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
 
     if (hit)
     {
-        glm::vec3 w_out = -direction;
-        float ior_in = 1.4;
-        float ior_out = 1;
-
-        glm::vec3 w_in = glm::reflect(-w_out, hitNormal);
-
-        return glm::vec3(1) * fresnelIOR(w_in, hitNormal, ior_in, ior_out);
 
         if (_scene->nextEventEstimation || _scene->MIS)
         {
