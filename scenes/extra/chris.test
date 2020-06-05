@@ -43,29 +43,10 @@ tri 6 5 4
 tri 5 6 7
 
 # sphere default material settings
-brdf ggx
+brdf volumetric
+ior 1.6
 
-
-pushTransform
-translate 0 -3.9 5
-
-#specular 0 0.2 0
-#diffuse 0.1 0.2 0
-#roughness 0.7
-#scale 4 4 4
-#obj ../res/shrek.obj
-
-
-diffuse 0 0 0
-specular 0.9 0.2 0.07
-roughness 0.05
-
-scale 0.8 0.8 0.8
-obj ../res/teapot.obj
-
-#scale 0.2 0.2 0.2
-#obj ../res/statue.obj
-popTransform
+sphere 0 0 0 1
 
 # overhead light
 quadLight  10 50 25  0 -6 6  10 0 0  110 105 95

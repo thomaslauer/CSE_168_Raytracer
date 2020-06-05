@@ -32,6 +32,7 @@ glm::vec3 VolumetricBSDF::brdf(
         ior_in = 1.0f;
     }
 
+    return glm::vec3(1);
     // begin reflection calculation
 
     if (frontface)
@@ -44,18 +45,18 @@ glm::vec3 VolumetricBSDF::brdf(
 
             float D = microfacetDistribution(halfAngle_r, material);
             float G = microfacetSelfShadowing(normal, w_in, material) * microfacetSelfShadowing(normal, w_out, material);
-            float F = fresnelIOR(w_out, normal, 1.0f, material.ior);
+            float F = fresnelIOR(w_out, normal, material.ior, 1.0f);
 
             float normalization = 4 * glm::dot(w_in, normal) * glm::dot(w_out, normal);
 
-            //return glm::vec3(1, 0, 0);
-            glm::vec3 retval = glm::vec3(1) * D * G * F / normalization;
-            return retval;
+            glm::vec3 retval = glm::vec3(1) * D * G * glm::pow(F, 2.0f) / normalization;
+            return 1.0f / retval;
         }
         else
         {
             // transmission ray
             // TODO: Add correct brsf from paper
+            float F = fresnelIOR(w_out, normal, material.ior, 1.0f);
             return glm::vec3(1);
         }
     }
@@ -111,6 +112,7 @@ glm::vec3 VolumetricBSDF::importanceSample(
     {
         retval = w_in_refraction;
     }
+
     pdfNormalization = absdot(w_in_reflection, normal) * f + absdot(w_in_refraction, normal) * (1 - f);
     return retval;
 }
@@ -121,5 +123,11 @@ float VolumetricBSDF::pdf(
     glm::vec3 w_out,
     material_t material)
 {
-    return 1;
+    glm::vec3 halfVector = glm::normalize(w_in + w_out);
+    float halfAngle = glm::acos(glm::min(1.0f, glm::dot(halfVector, normal)));
+    float F = fresnelIOR(w_out, normal, material.ior, 1.0f);
+
+    float ggxTerm = glm::pow(F, 2.0f) * microfacetDistribution(halfAngle, material) * glm::dot(normal, halfVector) / (4.0f * glm::dot(halfVector, w_in));
+
+    return ggxTerm;
 }

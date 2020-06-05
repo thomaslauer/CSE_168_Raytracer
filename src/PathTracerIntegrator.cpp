@@ -224,12 +224,8 @@ float PathTracerIntegrator::brdfMisWeighting(glm::vec3 position, glm::vec3 norma
     float neePDFValue = neePDF(position, w_in);
     float brdfPDFValue = pdf(normal, w_in, w_out, material);
 
-    //std::cout << "NEE PDF is " << neePDFValue << " brdf pdf is " << brdfPDFValue << std::endl;
-
     float neePDF2 = glm::pow(neePDFValue, 2);
     float brdfPDF2 = glm::pow(brdfPDFValue, 2);
-
-    //std::cout << "pdf: " << neePDFValue << " " << brdfPDFValue << std::endl;
 
     float denom = neePDF2 + brdfPDF2;
 

@@ -87,7 +87,9 @@ tri 0 2 3
 popTransform
 
 pushTransform
-brdf ggx
+brdf volumetric
+roughness 0.01
+ior 1.5
 
 
 translate 0 0.7 0
@@ -106,7 +108,7 @@ ior 1.5
 
 translate 0 0.8 1
 scale 1.5 1.5 0.02
-sphere 0 0 0 0.3
+#sphere 0 0 0 0.3
 popTransform
 
 popTransform
