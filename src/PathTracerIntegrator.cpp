@@ -40,7 +40,6 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
 
     if (hit)
     {
-
         if (_scene->nextEventEstimation || _scene->MIS)
         {
             // end conditions for NEE
@@ -85,7 +84,7 @@ glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, 
             outputColor += neeColor;
             outputColor += brdfWeighting * brdfColor;
         }
-        else if (_scene->nextEventEstimation && hitMaterial.brdf != GGX_VOLUMETRIC)
+        else if (_scene->nextEventEstimation)
         {
             float neePDF;
             outputColor += nextEventEstimation(

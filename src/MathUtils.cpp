@@ -45,6 +45,8 @@ float microfacetDistribution(float halfAngle, material_t material)
     float a_squared = material.roughness * material.roughness;
 
     float denominator = PI * glm::pow(glm::cos(halfAngle), 4.0f) * glm::pow(a_squared + glm::pow(glm::tan(halfAngle), 2.0f), 2.0f);
+    if (denominator == 0)
+        return 0;
     return a_squared / denominator;
 }
 
