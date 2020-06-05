@@ -79,7 +79,7 @@ glm::vec3 VolumetricBSDF::importanceSample(
 
     glm::vec3 halfVector = sphereCoordsToVector(theta, phi, normal);
 
-    f = fresnelIOR(-w_out, halfVector, material.ior, 1.0f);
+    f = fresnelIOR(w_out, halfVector, material.ior, 1.0f);
 
     if (glm::dot(w_out, halfVector) > 0)
     {
@@ -93,15 +93,11 @@ glm::vec3 VolumetricBSDF::importanceSample(
         w_in_refraction = calculateRefraction(-halfVector, -w_out, material.ior, 1.0f);
         pdfNormalization = absdot(w_in_refraction, normal);
         return w_in_refraction;
-        //w_in_reflection = glm::reflect(-halfVector, -w_out);
-        //f = fresnelIOR(w_out, halfVector, 1.0f, material.ior);
     }
 
     glm::vec3 retval;
 
-    f = glm::clamp(f, 0.0f, 1.0f);
-
-    if (f < epsilon3)
+    if (f > epsilon3)
     {
         retval = w_in_reflection;
         pdfNormalization = absdot(w_in_reflection, normal);

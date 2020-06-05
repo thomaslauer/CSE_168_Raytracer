@@ -81,6 +81,13 @@ glm::vec3 calculateRefraction(glm::vec3 halfVector, glm::vec3 w, float ior_in, f
 float fresnelIOR(glm::vec3 w_out, glm::vec3 normal, float ior_in, float ior_out)
 {
 
+    float cosTheta = glm::dot(normal, w_out);
+
+    float r0 = glm::pow((ior_out - ior_in) / (ior_out + ior_in), 2.0f);
+
+    return r0 + (1 - r0) * glm::pow(1 - cosTheta, 5.0f);
+
+    /*
     float c = glm::abs(glm::dot(w_out, normal));
 
     float g_radicand = glm::pow(ior_in, 2) / glm::pow(ior_out, 2) - 1 + glm::pow(c, 2);
@@ -95,6 +102,7 @@ float fresnelIOR(glm::vec3 w_out, glm::vec3 normal, float ior_in, float ior_out)
 
     float f = glm::pow(g - c, 2) / (2 * glm::pow(g + c, 2)) * (1 + glm::pow(c * (c + g) - 1, 2) / glm::pow(c * (c - g) + 1, 2));
     return f;
+    */
 }
 
 float absdot(glm::vec3 a, glm::vec3 b)
