@@ -6,14 +6,6 @@
 #include "MathUtils.h"
 #include "Constants.h"
 
-glm::vec3 reflectionBRDF(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material)
-{
-}
-
-glm::vec3 transmissionBTDF(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material)
-{
-}
-
 glm::vec3 VolumetricBSDF::brdf(
     glm::vec3 normal,
     glm::vec3 w_in,
