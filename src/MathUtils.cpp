@@ -51,10 +51,12 @@ float microfacetDistribution(float halfAngle, material_t material)
 
 float microfacetSelfShadowing(glm::vec3 normal, glm::vec3 view, material_t material)
 {
+    /*
     if (glm::dot(view, normal) <= 0)
         return 0;
+    */
 
-    float thetaV = glm::acos(glm::dot(view, normal));
+    float thetaV = glm::acos(absdot(view, normal));
 
     return 2.0f / (1.0f + glm::sqrt(glm::max(0.0f, 1.0f + glm::pow(material.roughness, 2.0f) * glm::pow(glm::tan(thetaV), 2.0f))));
 }
@@ -67,7 +69,7 @@ glm::vec3 fresnel(glm::vec3 w_in, glm::vec3 halfVector, material_t material)
 glm::vec3 calculateRefraction(glm::vec3 halfVector, glm::vec3 w, float ior_in, float ior_out)
 {
 
-    glm::vec3 refraction = glm::refract(-w, halfVector, ior_in / ior_out);
+    glm::vec3 refraction = glm::refract(-w, halfVector, ior_out / ior_in);
     if (refraction == glm::vec3(0))
     {
         return glm::reflect(-w, halfVector);

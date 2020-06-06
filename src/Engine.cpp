@@ -29,13 +29,15 @@ static unsigned char convertColorChannel(float channel)
 }
 
 static void saveImage(
-    const std::vector<glm::vec3>& imageData,
+    const std::vector<glm::vec3> &imageData,
     glm::uvec2 imageSize,
-    const std::string& fileName)
+    const std::string &fileName)
 {
     std::vector<unsigned char> imageByteData(imageSize.y * imageSize.x * 3);
-    for (size_t y = 0; y < imageSize.y; y++) {
-        for (size_t x = 0; x < imageSize.x; x++) {
+    for (size_t y = 0; y < imageSize.y; y++)
+    {
+        for (size_t x = 0; x < imageSize.x; x++)
+        {
 
             glm::vec3 color = imageData[y * imageSize.x + x];
 
@@ -52,16 +54,16 @@ static void saveImage(
         imageSize.x,
         imageSize.y,
         LCT_RGB);
-    if (error) {
+    if (error)
+    {
         throw std::runtime_error(
-            "LodePNG error (" + std::to_string(error) + "): "
-            + lodepng_error_text(error));
+            "LodePNG error (" + std::to_string(error) + "): " + lodepng_error_text(error));
     }
 }
 
-static void embreeErrorFunction(void* userPtr, RTCError error, const char* str)
+static void embreeErrorFunction(void *userPtr, RTCError error, const char *str)
 {
-    (void) userPtr;
+    (void)userPtr;
     std::cerr << "Embree error (" << error << "): " << str << std::endl;
 }
 
@@ -74,10 +76,12 @@ static void printLoadingBar(float completion, int numBars = 60)
 
     oss << "\r[";
     int j = 1;
-    for (; j <= barsComplete; j++) {
+    for (; j <= barsComplete; j++)
+    {
         oss << '#';
     }
-    for (; j <= numBars; j++) {
+    for (; j <= numBars; j++)
+    {
         oss << ' ';
     }
     oss << "] " << percentComplete << "%\r";
@@ -85,29 +89,32 @@ static void printLoadingBar(float completion, int numBars = 60)
     std::cout << oss.str() << std::flush;
 }
 
-void render(const std::string& sceneFilePath)
+void render(const std::string &sceneFilePath)
 {
 
     std::cout << "Loading scene..." << std::endl;
 
     RTCDevice embreeDevice = rtcNewDevice(nullptr);
-    if (!embreeDevice) throw std::runtime_error("Could not initialize Embree device.");
+    if (!embreeDevice)
+        throw std::runtime_error("Could not initialize Embree device.");
 
     rtcSetDeviceErrorFunction(embreeDevice, embreeErrorFunction, nullptr);
 
-    Scene* scene;
+    Scene *scene;
     loadScene(sceneFilePath, embreeDevice, &scene);
 
-    Integrator* integrator = scene->integrator;
+    Integrator *integrator = scene->integrator;
 
     std::cout << "Preparing render jobs..." << std::endl;
 
     int numThreads = std::thread::hardware_concurrency();
     //numThreads = 1;
 
-    std::vector<RenderJob*> jobs;
-    for (unsigned int y = 0; y < scene->imageSize.y; y += WINDOW_DIM) {
-        for (unsigned int x = 0; x < scene->imageSize.x; x += WINDOW_DIM) {
+    std::vector<RenderJob *> jobs;
+    for (unsigned int y = 0; y < scene->imageSize.y; y += WINDOW_DIM)
+    {
+        for (unsigned int x = 0; x < scene->imageSize.x; x += WINDOW_DIM)
+        {
             glm::uvec2 startPixel = glm::uvec2(x, y);
             glm::uvec2 windowSize = glm::uvec2(
                 std::min(x + WINDOW_DIM, scene->imageSize.x) - x,
@@ -129,16 +136,20 @@ void render(const std::string& sceneFilePath)
         RenderPool pool(scene, integrator, numThreads, jobs);
 
         size_t numCompletedJobs = 0;
-        while (numCompletedJobs < jobs.size()) {
+        while (numCompletedJobs < jobs.size())
+        {
 
-            std::vector<RenderJob*> completedJobs;
+            std::vector<RenderJob *> completedJobs;
             pool.getCompletedJobs(completedJobs);
 
-            for (RenderJob* job : completedJobs) {
+            for (RenderJob *job : completedJobs)
+            {
                 std::vector<glm::vec3> result = job->getResult();
-                for (unsigned int wy = 0; wy < job->windowSize.y; wy++) {
+                for (unsigned int wy = 0; wy < job->windowSize.y; wy++)
+                {
                     unsigned int y = job->startPixel.y + wy;
-                    for (unsigned int wx = 0; wx < job->windowSize.x; wx++) {
+                    for (unsigned int wx = 0; wx < job->windowSize.x; wx++)
+                    {
                         unsigned int x = job->startPixel.x + wx;
                         imageData[y * scene->imageSize.x + x] = result[wy * job->windowSize.x + wx];
                     }
