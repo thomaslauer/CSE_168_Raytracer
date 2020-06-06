@@ -35,6 +35,7 @@ set(LIB_SOURCES
     src/AnalyticDirectIntegrator.cpp
     src/MonteCarloDirectIntegrator.cpp
     src/PathTracerIntegrator.cpp
+    src/VolumetricPathTracerIntegrator.cpp
     src/BRDF.cpp
     src/PhongBRDF.cpp
     src/GGXBRDF.cpp

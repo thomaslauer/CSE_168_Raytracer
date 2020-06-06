@@ -18,10 +18,10 @@
 
 #include "tiny_obj_loader.h"
 
-class SceneLoader {
+class SceneLoader
+{
 
 private:
-
     RTCDevice _embreeDevice;
 
     glm::uvec2 _imageSize = glm::uvec2(1280, 720);
@@ -44,21 +44,21 @@ private:
     std::vector<quadLight_t> _quadLights;
     glm::vec3 _curAttenuation = glm::vec3(1.0f, 0.0f, 0.0f);
     material_t _curMaterial = {
-        glm::vec3(0.0f),                // diffuse
-        glm::vec3(0.0f),                // specular
-        1.0f,                           // shininess
-        glm::vec3(0.0f),                // emission
-        glm::vec3(0.2f, 0.2f, 0.2f),    // ambient
-        0.0f,                           // roughness
-        1.0f,                           // index of refraction
-        PHONG,                          // brdf type
-        false,                          // light
-        {   // triangle interpolation data
-            false,                      // do interpolation?
+        glm::vec3(0.0f),             // diffuse
+        glm::vec3(0.0f),             // specular
+        1.0f,                        // shininess
+        glm::vec3(0.0f),             // emission
+        glm::vec3(0.2f, 0.2f, 0.2f), // ambient
+        0.0f,                        // roughness
+        1.0f,                        // index of refraction
+        PHONG,                       // brdf type
+        false,                       // light
+        {
+            // triangle interpolation data
+            false,                                      // do interpolation?
             {glm::vec3(0), glm::vec3(0), glm::vec3(0)}, // vertex normals
-            glm::vec3(0)                // barycentric coords
-        }
-    };
+            glm::vec3(0)                                // barycentric coords
+        }};
 
     std::string _integratorType = "raytracer";
     int _lightSamples = 1;
@@ -75,18 +75,16 @@ private:
     void quadLightToTriangles();
 
 public:
-
     SceneLoader(RTCDevice embreeDevice);
-    glm::vec3 loadVec3(const std::vector<std::string>& arguments, size_t startIndex = 0);
-    glm::uvec3 loadUVec3(const std::vector<std::string>& arguments, size_t startIndex = 0);
-    void executeCommand(const std::string& command, const std::vector<std::string>& arguments);
-    void loadSceneData(const std::string& filePath);
-    Integrator* createIntegrator();
+    glm::vec3 loadVec3(const std::vector<std::string> &arguments, size_t startIndex = 0);
+    glm::uvec3 loadUVec3(const std::vector<std::string> &arguments, size_t startIndex = 0);
+    void executeCommand(const std::string &command, const std::vector<std::string> &arguments);
+    void loadSceneData(const std::string &filePath);
+    Integrator *createIntegrator();
     void loadEmbreeTriangles(RTCScene embreeScene);
     void loadEmbreeSpheres(RTCScene embreeScene);
     RTCScene createEmbreeScene();
-    Scene* commitSceneData();
-
+    Scene *commitSceneData();
 };
 
 SceneLoader::SceneLoader(RTCDevice embreeDevice)
@@ -94,7 +92,7 @@ SceneLoader::SceneLoader(RTCDevice embreeDevice)
 {
 }
 
-glm::vec3 SceneLoader::loadVec3(const std::vector<std::string>& arguments, size_t startIndex)
+glm::vec3 SceneLoader::loadVec3(const std::vector<std::string> &arguments, size_t startIndex)
 {
     return glm::vec3(
         std::stof(arguments[startIndex]),
@@ -102,7 +100,7 @@ glm::vec3 SceneLoader::loadVec3(const std::vector<std::string>& arguments, size_
         std::stof(arguments[startIndex + 2]));
 }
 
-glm::uvec3 SceneLoader::loadUVec3(const std::vector<std::string>& arguments, size_t startIndex)
+glm::uvec3 SceneLoader::loadUVec3(const std::vector<std::string> &arguments, size_t startIndex)
 {
     return glm::uvec3(
         std::stoi(arguments[startIndex]),
@@ -111,30 +109,36 @@ glm::uvec3 SceneLoader::loadUVec3(const std::vector<std::string>& arguments, siz
 }
 
 void SceneLoader::executeCommand(
-    const std::string& command,
-    const std::vector<std::string>& arguments)
+    const std::string &command,
+    const std::vector<std::string> &arguments)
 {
-    if (command == "size") {
+    if (command == "size")
+    {
 
         _imageSize = glm::uvec2(std::stoi(arguments[0]), std::stoi(arguments[1]));
-
-    } else if (command == "maxdepth") {
+    }
+    else if (command == "maxdepth")
+    {
 
         _maxDepth = std::stoi(arguments[0]);
-        if (_maxDepth == -1) _maxDepth = std::numeric_limits<int>::max();
-
-    } else if (command == "output") {
+        if (_maxDepth == -1)
+            _maxDepth = std::numeric_limits<int>::max();
+    }
+    else if (command == "output")
+    {
 
         _outputFileName = arguments[0];
-
-    } else if (command == "camera") {
+    }
+    else if (command == "camera")
+    {
 
         _cameraOrigin = loadVec3(arguments, 0);
         _cameraLookAt = loadVec3(arguments, 3);
         _cameraUp = loadVec3(arguments, 6);
         _cameraFieldOfView = std::stof(arguments[9]);
-
-    } else if (command == "sphere") {
+    }
+    else if (command == "sphere")
+    {
 
         glm::vec3 center = loadVec3(arguments, 0);
         float radius = std::stof(arguments[3]);
@@ -149,16 +153,19 @@ void SceneLoader::executeCommand(
         _sphereTransforms.push_back(transform);
 
         _sphereMaterials.push_back(_curMaterial);
-
-    } else if (command == "maxverts") {
+    }
+    else if (command == "maxverts")
+    {
 
         // ignore since we are using std::vector
-
-    } else if (command == "vertex") {
+    }
+    else if (command == "vertex")
+    {
 
         _rawVertices.push_back(loadVec3(arguments));
-
-    } else if (command == "tri") {
+    }
+    else if (command == "tri")
+    {
 
         glm::uvec3 rawIndices = loadUVec3(arguments);
 
@@ -172,8 +179,9 @@ void SceneLoader::executeCommand(
         _vertices.push_back(glm::vec3(curTransform * glm::vec4(_rawVertices[rawIndices.z], 1.0f)));
 
         _triMaterials.push_back(_curMaterial);
-
-    } else if (command == "obj") {
+    }
+    else if (command == "obj")
+    {
         // load OBJ file using tinyobjloader
 
         // mostly taken fron the tinyobjloader example
@@ -185,7 +193,6 @@ void SceneLoader::executeCommand(
         std::string err;
 
         tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str());
-
 
         /*
         glm::vec3 minPosition = glm::vec3(0.0f);
@@ -245,7 +252,6 @@ void SceneLoader::executeCommand(
                     _vertices.size() + 1,
                     _vertices.size() + 2));
 
-
                 // Loop over vertices in the face.
                 for (size_t v = 0; v < fv; v++)
                 {
@@ -276,40 +282,48 @@ void SceneLoader::executeCommand(
                 shapes[s].mesh.material_ids[f];
             }
         }
-    } else if (command == "translate") {
+    }
+    else if (command == "translate")
+    {
 
         glm::vec3 translation = loadVec3(arguments);
         curTransform = glm::translate(curTransform, translation);
-
-    } else if (command == "rotate") {
+    }
+    else if (command == "rotate")
+    {
 
         glm::vec3 axis = loadVec3(arguments, 0);
         float radians = std::stof(arguments[3]) * PI / 180.0f;
         curTransform = glm::rotate(curTransform, radians, axis);
-
-    } else if (command == "scale") {
+    }
+    else if (command == "scale")
+    {
 
         glm::vec3 scale = loadVec3(arguments);
         curTransform = glm::scale(curTransform, scale);
-
-    } else if (command == "pushTransform") {
+    }
+    else if (command == "pushTransform")
+    {
 
         _transformStack.push_back(curTransform);
-
-    } else if (command == "popTransform") {
+    }
+    else if (command == "popTransform")
+    {
 
         curTransform = _transformStack.back();
         _transformStack.pop_back();
-
-    } else if (command == "directional") {
+    }
+    else if (command == "directional")
+    {
 
         directionalLight_t light;
         light.toLight = glm::normalize(loadVec3(arguments, 0));
         light.brightness = loadVec3(arguments, 3);
 
         _directionalLights.push_back(light);
-
-    } else if (command == "point") {
+    }
+    else if (command == "point")
+    {
 
         pointLight_t light;
         light.point = loadVec3(arguments, 0);
@@ -317,8 +331,9 @@ void SceneLoader::executeCommand(
         light.attenuation = _curAttenuation;
 
         _pointLights.push_back(light);
-
-    } else if (command == "quadLight") {
+    }
+    else if (command == "quadLight")
+    {
 
         quadLight_t light;
         light.a = loadVec3(arguments, 0);
@@ -327,119 +342,162 @@ void SceneLoader::executeCommand(
         light.intensity = loadVec3(arguments, 9);
 
         _quadLights.push_back(light);
-
-    } else if (command == "attenuation") {
+    }
+    else if (command == "attenuation")
+    {
 
         _curAttenuation = loadVec3(arguments);
-
-    } else if (command == "ambient") {
+    }
+    else if (command == "ambient")
+    {
 
         _curMaterial.ambient = loadVec3(arguments);
-
-    } else if (command == "diffuse") {
+    }
+    else if (command == "diffuse")
+    {
 
         _curMaterial.diffuse = loadVec3(arguments);
-
-    } else if (command == "specular") {
+    }
+    else if (command == "specular")
+    {
 
         _curMaterial.specular = loadVec3(arguments);
-
-    } else if (command == "shininess") {
+    }
+    else if (command == "shininess")
+    {
 
         _curMaterial.shininess = std::stof(arguments[0]);
-
-    } else if (command == "emission") {
+    }
+    else if (command == "emission")
+    {
 
         _curMaterial.emission = loadVec3(arguments);
-
-    } else if (command == "roughness") {
+    }
+    else if (command == "roughness")
+    {
 
         _curMaterial.roughness = std::stof(arguments[0]);
-
-    } else if (command == "ior") {
+    }
+    else if (command == "ior")
+    {
 
         _curMaterial.ior = std::stof(arguments[0]);
-
-    } else if (command == "integrator") {
+    }
+    else if (command == "integrator")
+    {
 
         _integratorType = arguments[0];
-
-    } else if (command == "lightsamples") {
+    }
+    else if (command == "lightsamples")
+    {
 
         _lightSamples = std::stoi(arguments[0]);
-
-    } else if (command == "lightstratify") {
+    }
+    else if (command == "lightstratify")
+    {
 
         if (arguments[0] == "on")
             _lightStratify = true;
         else
             _lightStratify = false;
-    } else if (command == "spp") {
+    }
+    else if (command == "spp")
+    {
 
         _samplesPerPixel = std::stoi(arguments[0]);
+    }
+    else if (command == "nexteventestimation")
+    {
 
-    } else if (command == "nexteventestimation") {
-
-        if (arguments[0] == "on") {
+        if (arguments[0] == "on")
+        {
             _nextEventEstimation = true;
-        } else if (arguments[0] == "mis") {
+        }
+        else if (arguments[0] == "mis")
+        {
             _MIS = true;
-        } else {
+        }
+        else
+        {
             _nextEventEstimation = false;
         }
+    }
+    else if (command == "russianroulette")
+    {
 
-    } else if (command == "russianroulette") {
-
-        if (arguments[0] == "on") {
+        if (arguments[0] == "on")
+        {
             _russianRoulette = true;
-        } else {
+        }
+        else
+        {
             _russianRoulette = false;
         }
-    } else if (command == "importancesampling") {
+    }
+    else if (command == "importancesampling")
+    {
 
-        if (arguments[0] == "cosine") {
+        if (arguments[0] == "cosine")
+        {
             _importanceSampling = COSINE_SAMPLING;
-        } else if (arguments[0] == "brdf") {
+        }
+        else if (arguments[0] == "brdf")
+        {
             _importanceSampling = BRDF_SAMPLING;
-        } else {
+        }
+        else
+        {
             _importanceSampling = HEMISPHERE_SAMPLING;
         }
-    } else if (command == "brdf") {
-        if (arguments[0] == "ggx") {
+    }
+    else if (command == "brdf")
+    {
+        if (arguments[0] == "ggx")
+        {
             _curMaterial.brdf = GGX;
-        } else if (arguments[0] == "volumetric") {
+        }
+        else if (arguments[0] == "volumetric")
+        {
             _curMaterial.brdf = GGX_VOLUMETRIC;
-        } else {
+        }
+        else
+        {
             _curMaterial.brdf = PHONG;
         }
-    } else if (command == "gamma") {
+    }
+    else if (command == "gamma")
+    {
 
         _gamma = std::stof(arguments[0]);
-
-    } else {
+    }
+    else
+    {
 
         std::cerr << "Unknown command in scene file: '" << command << "'" << std::endl;
-
     }
 }
 
-void SceneLoader::loadSceneData(const std::string& filePath)
+void SceneLoader::loadSceneData(const std::string &filePath)
 {
     std::ifstream file(filePath);
-    if (!file.is_open()) throw std::runtime_error("Could not open file: '" + filePath + "'");
+    if (!file.is_open())
+        throw std::runtime_error("Could not open file: '" + filePath + "'");
 
     std::string line;
-    while (std::getline(file, line)) {
+    while (std::getline(file, line))
+    {
         std::istringstream tokenStream(line);
 
         std::string command;
         tokenStream >> command;
 
-        if (command.size() == 0 || command[0] == '#') continue;
+        if (command.size() == 0 || command[0] == '#')
+            continue;
 
         std::vector<std::string> arguments;
         std::string argument;
-        while (tokenStream >> argument) {
+        while (tokenStream >> argument)
+        {
             arguments.push_back(argument);
         }
 
@@ -447,8 +505,10 @@ void SceneLoader::loadSceneData(const std::string& filePath)
     }
 }
 
-void SceneLoader::quadLightToTriangles() {
-    for (auto light : _quadLights) {
+void SceneLoader::quadLightToTriangles()
+{
+    for (auto light : _quadLights)
+    {
         int offset = _vertices.size();
         _vertices.push_back(light.a);
         _vertices.push_back(light.a + light.ab);
@@ -475,7 +535,7 @@ void SceneLoader::loadEmbreeTriangles(RTCScene embreeScene)
 {
     RTCGeometry embreeTriangles = rtcNewGeometry(_embreeDevice, RTC_GEOMETRY_TYPE_TRIANGLE);
 
-    glm::vec3* embreeVertices = reinterpret_cast<glm::vec3*>(rtcSetNewGeometryBuffer(
+    glm::vec3 *embreeVertices = reinterpret_cast<glm::vec3 *>(rtcSetNewGeometryBuffer(
         embreeTriangles,
         RTC_BUFFER_TYPE_VERTEX,
         0,
@@ -484,7 +544,7 @@ void SceneLoader::loadEmbreeTriangles(RTCScene embreeScene)
         _vertices.size()));
     std::memcpy(embreeVertices, _vertices.data(), _vertices.size() * sizeof(glm::vec3));
 
-    glm::uvec3* embreeIndices = reinterpret_cast<glm::uvec3*>(rtcSetNewGeometryBuffer(
+    glm::uvec3 *embreeIndices = reinterpret_cast<glm::uvec3 *>(rtcSetNewGeometryBuffer(
         embreeTriangles,
         RTC_BUFFER_TYPE_INDEX,
         0,
@@ -504,7 +564,7 @@ void SceneLoader::loadEmbreeSpheres(RTCScene embreeScene)
 
     RTCGeometry embreeSphere = rtcNewGeometry(_embreeDevice, RTC_GEOMETRY_TYPE_SPHERE_POINT);
 
-    glm::vec4* embreeSpherePoint = reinterpret_cast<glm::vec4*>(rtcSetNewGeometryBuffer(
+    glm::vec4 *embreeSpherePoint = reinterpret_cast<glm::vec4 *>(rtcSetNewGeometryBuffer(
         embreeSphere,
         RTC_BUFFER_TYPE_VERTEX,
         0,
@@ -518,7 +578,8 @@ void SceneLoader::loadEmbreeSpheres(RTCScene embreeScene)
     rtcReleaseGeometry(embreeSphere);
     rtcCommitScene(embreeSphereScene);
 
-    for (glm::mat4 transform : _sphereTransforms) {
+    for (glm::mat4 transform : _sphereTransforms)
+    {
         RTCGeometry embreeSphereInstance = rtcNewGeometry(_embreeDevice, RTC_GEOMETRY_TYPE_INSTANCE);
         rtcSetGeometryInstancedScene(embreeSphereInstance, embreeSphereScene);
         rtcSetGeometryTimeStepCount(embreeSphereInstance, 1);
@@ -544,26 +605,26 @@ RTCScene SceneLoader::createEmbreeScene()
     return embreeScene;
 }
 
-Integrator* SceneLoader::createIntegrator()
+Integrator *SceneLoader::createIntegrator()
 {
-    Integrator* it;
+    Integrator *it;
 
-    if (_integratorType == "raytracer") {
+    if (_integratorType == "raytracer")
         it = new RayTracerIntegrator();
-    } else if (_integratorType == "direct") {
+    else if (_integratorType == "direct")
         it = new MonteCarloDirectIntegrator();
-    } else if (_integratorType == "analyticdirect") {
+    else if (_integratorType == "analyticdirect")
         it = new AnalyticDirectIntegrator();
-    } else if (_integratorType == "pathtracer") {
+    else if (_integratorType == "pathtracer")
         it = new PathTracerIntegrator();
-    } else {
+    else if (_integratorType == "volumetricpathtracer")
+        it = new VolumetricPathTracerIntegrator();
+    else
         it = new RayTracerIntegrator();
-    }
-
     return it;
 }
 
-Scene* SceneLoader::commitSceneData()
+Scene *SceneLoader::commitSceneData()
 {
     float aspectRatio = static_cast<float>(_imageSize.x) / _imageSize.y;
     glm::vec3 cameraLook = glm::normalize(_cameraLookAt - _cameraOrigin);
@@ -573,21 +634,19 @@ Scene* SceneLoader::commitSceneData()
     camera_t camera;
     camera.origin = _cameraOrigin;
     camera.imagePlaneTopLeft =
-        _cameraOrigin
-        + cameraLook / std::tan(PI * _cameraFieldOfView / 360.0f)
-        + imagePlaneUp
-        - aspectRatio * imagePlaneRight;
+        _cameraOrigin + cameraLook / std::tan(PI * _cameraFieldOfView / 360.0f) + imagePlaneUp - aspectRatio * imagePlaneRight;
     camera.pixelRight = (2.0f * aspectRatio / _imageSize.x) * imagePlaneRight;
     camera.pixelDown = (-2.0f / _imageSize.y) * imagePlaneUp;
 
     std::vector<glm::mat3> sphereNormalTransforms;
-    for (size_t i = 0; i < _sphereTransforms.size(); i++) {
+    for (size_t i = 0; i < _sphereTransforms.size(); i++)
+    {
         sphereNormalTransforms.push_back(glm::inverseTranspose(glm::mat3(_sphereTransforms[i])));
     }
 
     quadLightToTriangles();
 
-    Scene* scene = new Scene();
+    Scene *scene = new Scene();
     scene->imageSize = _imageSize;
     scene->maxDepth = _maxDepth;
     scene->outputFileName = _outputFileName;
@@ -615,9 +674,9 @@ Scene* SceneLoader::commitSceneData()
 }
 
 void loadScene(
-    const std::string& filePath,
+    const std::string &filePath,
     RTCDevice embreeDevice,
-    Scene** scene)
+    Scene **scene)
 {
     SceneLoader sceneLoader(embreeDevice);
     sceneLoader.loadSceneData(filePath);

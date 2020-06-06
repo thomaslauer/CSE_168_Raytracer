@@ -23,6 +23,7 @@ glm::vec3 VolumetricBSDF::brdf(
         frontface = true;
         ior_out = 1.0f;
         ior_in = material.ior;
+        return glm::vec3(1);
     }
     else
     {
@@ -30,9 +31,9 @@ glm::vec3 VolumetricBSDF::brdf(
         frontface = false;
         ior_out = material.ior;
         ior_in = 1.0f;
+        return glm::vec3(0.1, 0.5, 0.5);
     }
 
-    return glm::vec3(1);
     // begin reflection calculation
 
     if (frontface)
@@ -50,7 +51,7 @@ glm::vec3 VolumetricBSDF::brdf(
             float normalization = 4 * glm::dot(w_in, normal) * glm::dot(w_out, normal);
 
             glm::vec3 retval = glm::vec3(1) * D * G * glm::pow(F, 2.0f) / normalization;
-            return 1.0f / retval;
+            return retval;
         }
         else
         {
