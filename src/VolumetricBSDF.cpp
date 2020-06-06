@@ -6,6 +6,14 @@
 #include "MathUtils.h"
 #include "Constants.h"
 
+glm::vec3 reflectionBRDF(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material)
+{
+}
+
+glm::vec3 transmissionBTDF(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material)
+{
+}
+
 glm::vec3 VolumetricBSDF::brdf(
     glm::vec3 normal,
     glm::vec3 w_in,
@@ -57,14 +65,14 @@ glm::vec3 VolumetricBSDF::brdf(
             // transmission ray
             // TODO: Add correct brsf from paper
             float F = fresnelIOR(w_out, normal, material.ior, 1.0f);
-            return glm::vec3(1);
+            return glm::vec3(1) * absdot(w_out, normal);
         }
     }
     else
     {
         // backface hit
         // TODO: also add brsf here, switching for backfaces
-        return glm::vec3(1);
+        return glm::vec3(1) * absdot(w_out, normal);
     }
 }
 
@@ -88,19 +96,17 @@ glm::vec3 VolumetricBSDF::importanceSample(
 
     f = fresnelIOR(w_out, halfVector, material.ior, 1.0f);
 
-    if (glm::dot(w_out, halfVector) > 0)
-    {
-        // front face hit
-        w_in_refraction = calculateRefraction(halfVector, -w_out, 1.0f, material.ior);
-        w_in_reflection = glm::reflect(-w_out, halfVector);
-    }
-    else
+    if (glm::dot(w_out, halfVector) < 0)
     {
         // back face hit
-        w_in_refraction = calculateRefraction(-halfVector, -w_out, material.ior, 1.0f);
+        w_in_refraction = calculateRefraction(-halfVector, w_out, material.ior, 1.0f);
         pdfNormalization = absdot(w_in_refraction, normal);
         return w_in_refraction;
     }
+
+    // front face hit
+    w_in_refraction = calculateRefraction(halfVector, w_out, 1.0f, material.ior);
+    w_in_reflection = glm::reflect(-w_out, halfVector);
 
     glm::vec3 retval;
 
@@ -123,11 +129,15 @@ float VolumetricBSDF::pdf(
     glm::vec3 w_out,
     material_t material)
 {
+    /*
     glm::vec3 halfVector = glm::normalize(w_in + w_out);
     float halfAngle = glm::acos(glm::min(1.0f, glm::dot(halfVector, normal)));
     float F = fresnelIOR(w_out, normal, material.ior, 1.0f);
 
     float ggxTerm = glm::pow(F, 2.0f) * microfacetDistribution(halfAngle, material) * glm::dot(normal, halfVector) / (4.0f * glm::dot(halfVector, w_in));
 
-    return ggxTerm;
+    return 1.0f / ggxTerm;
+    */
+
+    return 1;
 }
