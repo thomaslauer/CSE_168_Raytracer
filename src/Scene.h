@@ -35,9 +35,11 @@ struct triangleData_t
 struct volume_t
 {
     std::string id;
+    int priority;
     float ior;
     glm::vec3 absorbsion;
-    glm::vec3 scattering;
+    float meanScatterDistance;
+    float scatterDirectionality;
 };
 
 struct material_t

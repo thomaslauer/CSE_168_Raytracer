@@ -66,7 +66,6 @@ glm::vec3 fresnel(glm::vec3 w_in, glm::vec3 halfVector, material_t material)
 
 glm::vec3 calculateRefraction(glm::vec3 halfVector, glm::vec3 w, float ior_in, float ior_out)
 {
-
     glm::vec3 refraction = glm::refract(-w, halfVector, ior_in / ior_out);
     if (refraction == glm::vec3(0))
     {
@@ -92,4 +91,37 @@ float fresnelIOR(glm::vec3 w_out, glm::vec3 normal, float ior_in, float ior_out)
 float absdot(glm::vec3 a, glm::vec3 b)
 {
     return glm::abs(glm::dot(a, b));
+}
+
+volume_t highestPriorityVolume(Scene *scene, std::set<std::string> volumes)
+{
+    volume_t bestVolume;
+    bool first = true;
+
+    for (std::string id : volumes)
+    {
+        volume_t v = scene->volumeMap[id];
+
+        if (first || v.priority < bestVolume.priority)
+        {
+            bestVolume = v;
+            first = false;
+        }
+    }
+
+    return bestVolume;
+}
+
+glm::vec3 attenuate(glm::vec3 T, float dist, volume_t volume)
+{
+
+    if (volume.absorbsion == glm::vec3(0))
+        return T;
+
+    glm::vec3 out = glm::vec3(0);
+    out.x = T.x * glm::exp(-volume.absorbsion.x * dist);
+    out.y = T.y * glm::exp(-volume.absorbsion.y * dist);
+    out.z = T.z * glm::exp(-volume.absorbsion.z * dist);
+
+    return out;
 }

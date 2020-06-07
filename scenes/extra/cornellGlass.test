@@ -2,7 +2,7 @@
 size 480 480
 #size 2000 2000
 integrator volumetricpathtracer
-spp 1000
+spp 20000
 importancesampling brdf
 nexteventestimation off
 russianroulette on
@@ -13,8 +13,8 @@ gamma 2.2
 maxdepth 10
 
 # define volume types
-volumetype air 1  0 0 0  0 0 0
-volumetype glass 1.5  0 0 0  0 0 0
+volumetype air 1  1  0 0 0  0 0 0
+volumetype glass 0  1.5  5 5 5  0 0 0
 defaultvolume air
 
 maxverts 4

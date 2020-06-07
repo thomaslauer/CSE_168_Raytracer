@@ -1,9 +1,10 @@
 #pragma once
 
+#include <random>
+#include <set>
+
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
-
-#include <random>
 
 #include "Scene.h"
 #include "BRDF.h"
@@ -84,7 +85,6 @@ private:
 
     BRDF *_phongBRDF;
     BRDF *_ggxBRDF;
-    BRDF *_volumetricBSDF;
 
     glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction, int numBounces);
 
@@ -121,7 +121,6 @@ private:
 
     float pdf(glm::vec3 normal, glm::vec3 w_in, glm::vec3 w_out, material_t material);
 
-    // TODO: change this
     glm::vec3 ggxDirect(
         glm::vec3 position,
         glm::vec3 normal,
@@ -156,9 +155,9 @@ private:
 
     BRDF *_phongBRDF;
     BRDF *_ggxBRDF;
-    BRDF *_volumetricBSDF;
+    VolumetricBSDF *_volumetricBSDF;
 
-    glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction, int numBounces);
+    glm::vec3 traceRay(glm::vec3 origin, glm::vec3 direction, std::set<std::string> &volumes, int numBounces);
 
     // indirect light calculated as the integral over the unit hemisphere
     glm::vec3 indirectLighting(
@@ -166,6 +165,7 @@ private:
         glm::vec3 normal,
         material_t material,
         glm::vec3 origin,
+        std::set<std::string> &volumes,
         int numBounces);
 
     // calculate BRDF for a material
@@ -175,13 +175,12 @@ private:
         glm::vec3 w_out,
         material_t mat);
 
-    float geometry(
-        glm::vec3 direction,
-        glm::vec3 surfaceNormal,
-        glm::vec3 lightDirection,
-        glm::vec3 lightNormal);
-
-    glm::vec3 importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float &pdfNormalization);
+    glm::vec3 importanceSample(
+        glm::vec3 normal,
+        glm::vec3 w_out,
+        material_t material,
+        std::set<std::string> &volumes,
+        float &pdfNormalization);
 
 public:
     VolumetricPathTracerIntegrator();

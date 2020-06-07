@@ -382,9 +382,11 @@ void SceneLoader::executeCommand(
 
         volume_t curVolume;
         curVolume.id = id;
-        curVolume.ior = std::stof(arguments[1]);
-        curVolume.absorbsion = loadVec3(arguments, 2);
-        curVolume.scattering = loadVec3(arguments, 5);
+        curVolume.priority = std::stoi(arguments[1]);
+        curVolume.ior = std::stof(arguments[2]);
+        curVolume.absorbsion = loadVec3(arguments, 3);
+        curVolume.meanScatterDistance = std::stof(arguments[6]);
+        curVolume.scatterDirectionality = std::stof(arguments[7]);
 
         _volumeMap[id] = curVolume;
     }

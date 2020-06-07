@@ -19,7 +19,6 @@ PathTracerIntegrator::PathTracerIntegrator()
 
     _phongBRDF = new PhongBRDF();
     _ggxBRDF = new GGXBRDF();
-    _volumetricBSDF = new VolumetricBSDF();
 }
 
 glm::vec3 PathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction)
@@ -266,7 +265,6 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
         glm::vec3 f = brdf(normal, w_in, w_out, material);
         glm::vec3 T = f * glm::abs(glm::dot(w_in, normal)) / pdfNormalization;
 
-        //if(material.brdf == GGX_VOLUMETRIC) std::cout << glm::to_string(f) << glm::to_string(T) << std::endl;
 
         if (_scene->russianRoulette)
         {
@@ -333,8 +331,6 @@ inline glm::vec3 PathTracerIntegrator::brdf(
 {
     if (mat.brdf == GGX)
         return _ggxBRDF->brdf(surfaceNormal, w_in, w_out, mat);
-    else if (mat.brdf == GGX_VOLUMETRIC)
-        return _volumetricBSDF->brdf(surfaceNormal, w_in, w_out, mat);
     else
         return _phongBRDF->brdf(surfaceNormal, w_in, w_out, mat);
 }
@@ -344,8 +340,6 @@ inline float PathTracerIntegrator::pdf(
 {
     if (material.brdf == GGX)
         return _ggxBRDF->pdf(normal, w_in, w_out, material);
-    else if (material.brdf == GGX_VOLUMETRIC)
-        return _volumetricBSDF->pdf(normal, w_in, w_out, material);
     else
         return _phongBRDF->pdf(normal, w_in, w_out, material);
 }
@@ -412,8 +406,6 @@ glm::vec3 PathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_o
     {
         if (material.brdf == GGX)
             w_in = _ggxBRDF->importanceSample(normal, w_out, material, pdfNormalization);
-        else if (material.brdf == GGX_VOLUMETRIC)
-            w_in = _volumetricBSDF->importanceSample(normal, w_out, material, pdfNormalization);
         else
             w_in = _phongBRDF->importanceSample(normal, w_out, material, pdfNormalization);
     }
@@ -437,5 +429,4 @@ void PathTracerIntegrator::setScene(Scene *scene)
 
     _phongBRDF->setScene(scene);
     _ggxBRDF->setScene(scene);
-    _volumetricBSDF->setScene(scene);
 }

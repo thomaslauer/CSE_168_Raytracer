@@ -1,8 +1,8 @@
 #Cornell Box
 size 480 480
 #size 2000 2000
-integrator pathtracer
-spp 10000
+integrator volumetricpathtracer
+spp 1000
 importancesampling brdf
 nexteventestimation off
 russianroulette on
@@ -12,6 +12,10 @@ gamma 2.2
 
 maxdepth 50
 
+# define volume types
+volumetype air 1  1  0 0 0  -1 0
+volumetype glass 0  1.5  1 1 0  0.01 0
+defaultvolume air
 
 maxverts 4
 #planar face
@@ -88,9 +92,9 @@ popTransform
 
 pushTransform
 brdf volumetric
-roughness 0.01
-ior 1.5
+roughness 0.1
 
+volume glass
 
 translate 0 0.7 0
 scale 0.5 0.5 0.5
@@ -98,17 +102,5 @@ obj ../res/monkey.obj
 popTransform
 
 pushTransform
-brdf volumetric
-
-diffuse 1 1 1
-specular 1 1 1
-roughness 0.01
-
-ior 1.5
-
-translate 0 0.8 1
-scale 1.5 1.5 0.02
-#sphere 0 0 0 0.3
-popTransform
 
 popTransform

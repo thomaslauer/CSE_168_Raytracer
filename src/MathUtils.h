@@ -2,6 +2,8 @@
 #define MATH_UTILS_H
 
 #include <glm/glm.hpp>
+#include <string>
+#include <set>
 
 #include "Scene.h"
 
@@ -17,5 +19,9 @@ glm::vec3 calculateRefraction(glm::vec3 halfVector, glm::vec3 w, float ior_in, f
 float fresnelIOR(glm::vec3 w_out, glm::vec3 normal, float ior_in, float ior_out);
 
 float absdot(glm::vec3 a, glm::vec3 b);
+
+volume_t highestPriorityVolume(Scene *scene, std::set<std::string> volumes);
+
+glm::vec3 attenuate(glm::vec3 T, float dist, volume_t volume);
 
 #endif

@@ -1,6 +1,7 @@
 #include "Integrator.h"
 
 #include <iostream>
+#include <set>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/intersect.hpp>
@@ -24,10 +25,13 @@ VolumetricPathTracerIntegrator::VolumetricPathTracerIntegrator()
 
 glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction)
 {
-    return traceRay(origin, direction, 0);
+    std::set<std::string> volumes;
+    volumes.insert(_scene->defaultVolume);
+    return traceRay(origin, direction, volumes, 0);
 }
 
-glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, int numBounces)
+/*
+glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, std::set<std::string> &volumes, int numBounces)
 {
     glm::vec3 outputColor = glm::vec3(0);
 
@@ -48,10 +52,68 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
             hitNormal,
             hitMaterial,
             origin,
+            volumes,
             numBounces + 1);
     }
 
     return outputColor;
+}
+*/
+
+glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, std::set<std::string> &volumes, int numBounces)
+{
+    glm::vec3 hitPosition;
+    glm::vec3 hitNormal;
+
+    material_t hitMaterial;
+
+    bool hit = _scene->castRay(origin, direction, &hitPosition, &hitNormal, &hitMaterial);
+
+    // find the highest priority volume for the current ray
+    volume_t volume = highestPriorityVolume(_scene, volumes);
+
+    float t = std::numeric_limits<float>::infinity();
+    if (volume.meanScatterDistance != -1)
+        t = -glm::log(gen(rng)) * volume.meanScatterDistance;
+
+    float backfaceDistance = glm::length(hitPosition - origin);
+
+    if (hit && t > backfaceDistance)
+    {
+        // calculate surface lighting
+        if (hitMaterial.light || numBounces > _scene->maxDepth)
+            return attenuate(hitMaterial.emission, backfaceDistance, volume);
+        else
+            return attenuate(indirectLighting(
+                                 hitPosition,
+                                 hitNormal,
+                                 hitMaterial,
+                                 origin,
+                                 volumes,
+                                 numBounces + 1),
+                             backfaceDistance, volume);
+    }
+
+    // move hitPosition to the sampled location
+    hitPosition = origin + t * direction;
+
+    // todo: add sampling of scattering functions
+    // sample random direction (not doing good scatting right now)
+
+    float theta = glm::acos(2 * gen(rng) - 1);
+    float phi = TWO_PI * gen(rng);
+
+    glm::vec3 newDirection = sphereCoordsToVector(theta, phi, direction);
+
+    float pdfNormalization = 1.0f / FOUR_PI;
+
+    glm::vec3 scatteredLight;
+    if (numBounces > _scene->maxDepth)
+        scatteredLight = glm::vec3(0);
+    else
+        scatteredLight = traceRay(hitPosition, newDirection, volumes, numBounces + 1);
+
+    return attenuate(scatteredLight, t, volume);
 }
 
 glm::vec3 VolumetricPathTracerIntegrator::indirectLighting(
@@ -59,6 +121,7 @@ glm::vec3 VolumetricPathTracerIntegrator::indirectLighting(
     glm::vec3 normal,
     material_t material,
     glm::vec3 origin,
+    std::set<std::string> &volumes,
     int numBounces)
 {
     glm::vec3 outputColor = glm::vec3(0);
@@ -67,7 +130,7 @@ glm::vec3 VolumetricPathTracerIntegrator::indirectLighting(
     for (int i = 0; i < numRaysPerBounce; i++)
     {
         float pdfNormalization = 1;
-        glm::vec3 w_in = importanceSample(normal, w_out, material, pdfNormalization);
+        glm::vec3 w_in = importanceSample(normal, w_out, material, volumes, pdfNormalization);
 
         glm::vec3 f = brdf(normal, w_in, w_out, material);
         glm::vec3 T = f * glm::abs(glm::dot(w_in, normal)) / pdfNormalization;
@@ -87,12 +150,12 @@ glm::vec3 VolumetricPathTracerIntegrator::indirectLighting(
             {
                 // boost ray
                 float boost = 1.0f / (1.0f - p);
-                outputColor += boost * T * traceRay(position + w_in * EPSILON, w_in, numBounces);
+                outputColor += boost * T * traceRay(position + w_in * EPSILON, w_in, volumes, numBounces);
             }
         }
         else
         {
-            outputColor += T * traceRay(position + w_in * EPSILON, w_in, numBounces);
+            outputColor += T * traceRay(position + w_in * EPSILON, w_in, volumes, numBounces);
         }
     }
     return outputColor / ((float)numRaysPerBounce);
@@ -107,33 +170,12 @@ inline glm::vec3 VolumetricPathTracerIntegrator::brdf(
     if (mat.brdf == GGX)
         return _ggxBRDF->brdf(surfaceNormal, w_in, w_out, mat);
     else if (mat.brdf == GGX_VOLUMETRIC)
-        return _volumetricBSDF->brdf(surfaceNormal, w_in, w_out, mat);
+        return glm::vec3(1); // nothing ever gets absorbed
     else
         return _phongBRDF->brdf(surfaceNormal, w_in, w_out, mat);
 }
 
-/**
- * Geometry term for rendering equation
- */
-float VolumetricPathTracerIntegrator::geometry(
-    glm::vec3 surfacePoint,
-    glm::vec3 surfaceNormal,
-    glm::vec3 lightPoint,
-    glm::vec3 lightNormal)
-{
-    glm::vec3 lightVector = glm::normalize(lightPoint - surfacePoint);
-
-    float cosThetai = glm::abs(glm::dot(lightVector, surfaceNormal));
-    float cosThetal = glm::abs(glm::dot(lightVector, -lightNormal));
-
-    cosThetai = (cosThetai < 0) ? 0 : cosThetai;
-    cosThetal = (cosThetal < 0) ? 0 : cosThetal;
-
-    //return cosThetai * cosThetal;
-    return cosThetai * cosThetal / glm::pow(glm::length(lightPoint - surfacePoint), 2);
-}
-
-glm::vec3 VolumetricPathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, float &pdfNormalization)
+glm::vec3 VolumetricPathTracerIntegrator::importanceSample(glm::vec3 normal, glm::vec3 w_out, material_t material, std::set<std::string> &volumes, float &pdfNormalization)
 {
     glm::vec3 w_in;
 
@@ -163,7 +205,7 @@ glm::vec3 VolumetricPathTracerIntegrator::importanceSample(glm::vec3 normal, glm
         if (material.brdf == GGX)
             w_in = _ggxBRDF->importanceSample(normal, w_out, material, pdfNormalization);
         else if (material.brdf == GGX_VOLUMETRIC)
-            w_in = _volumetricBSDF->importanceSample(normal, w_out, material, pdfNormalization);
+            w_in = _volumetricBSDF->importanceSample(normal, w_out, material, volumes, pdfNormalization);
         else
             w_in = _phongBRDF->importanceSample(normal, w_out, material, pdfNormalization);
     }
