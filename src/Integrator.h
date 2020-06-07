@@ -150,6 +150,8 @@ private:
     static thread_local std::default_random_engine rng;
     std::uniform_real_distribution<float> gen;
 
+    material_t airMaterial;
+
     int numRaysPerBounce = 1;
 
     BRDF *_phongBRDF;

@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <map>
 #include <limits>
 #include <stdexcept>
 
@@ -43,6 +44,10 @@ private:
     std::vector<pointLight_t> _pointLights;
     std::vector<quadLight_t> _quadLights;
     glm::vec3 _curAttenuation = glm::vec3(1.0f, 0.0f, 0.0f);
+
+    std::string _defaultVolume;
+    std::map<std::string, volume_t> _volumeMap;
+
     material_t _curMaterial = {
         glm::vec3(0.0f),             // diffuse
         glm::vec3(0.0f),             // specular
@@ -50,9 +55,9 @@ private:
         glm::vec3(0.0f),             // emission
         glm::vec3(0.2f, 0.2f, 0.2f), // ambient
         0.0f,                        // roughness
-        1.0f,                        // index of refraction
-        PHONG,                       // brdf type
-        false,                       // light
+        "air",
+        PHONG, // brdf type
+        false, // light
         {
             // triangle interpolation data
             false,                                      // do interpolation?
@@ -345,57 +350,62 @@ void SceneLoader::executeCommand(
     }
     else if (command == "attenuation")
     {
-
         _curAttenuation = loadVec3(arguments);
     }
     else if (command == "ambient")
     {
-
         _curMaterial.ambient = loadVec3(arguments);
     }
     else if (command == "diffuse")
     {
-
         _curMaterial.diffuse = loadVec3(arguments);
     }
     else if (command == "specular")
     {
-
         _curMaterial.specular = loadVec3(arguments);
     }
     else if (command == "shininess")
     {
-
         _curMaterial.shininess = std::stof(arguments[0]);
     }
     else if (command == "emission")
     {
-
         _curMaterial.emission = loadVec3(arguments);
     }
     else if (command == "roughness")
     {
-
         _curMaterial.roughness = std::stof(arguments[0]);
     }
-    else if (command == "ior")
+    else if (command == "volumetype")
     {
+        std::string id = arguments[0];
 
-        _curMaterial.ior = std::stof(arguments[0]);
+        volume_t curVolume;
+        curVolume.id = id;
+        curVolume.ior = std::stof(arguments[1]);
+        curVolume.absorbsion = loadVec3(arguments, 2);
+        curVolume.scattering = loadVec3(arguments, 5);
+
+        _volumeMap[id] = curVolume;
+    }
+    else if (command == "volume")
+    {
+        _curMaterial.volumeID = arguments[0];
+    }
+    else if (command == "defaultvolume")
+    {
+        _defaultVolume = arguments[0];
     }
     else if (command == "integrator")
     {
-
         _integratorType = arguments[0];
     }
     else if (command == "lightsamples")
     {
-
         _lightSamples = std::stoi(arguments[0]);
     }
     else if (command == "lightstratify")
     {
-
         if (arguments[0] == "on")
             _lightStratify = true;
         else
@@ -403,40 +413,26 @@ void SceneLoader::executeCommand(
     }
     else if (command == "spp")
     {
-
         _samplesPerPixel = std::stoi(arguments[0]);
     }
     else if (command == "nexteventestimation")
     {
-
         if (arguments[0] == "on")
-        {
             _nextEventEstimation = true;
-        }
         else if (arguments[0] == "mis")
-        {
             _MIS = true;
-        }
         else
-        {
             _nextEventEstimation = false;
-        }
     }
     else if (command == "russianroulette")
     {
-
         if (arguments[0] == "on")
-        {
             _russianRoulette = true;
-        }
         else
-        {
             _russianRoulette = false;
-        }
     }
     else if (command == "importancesampling")
     {
-
         if (arguments[0] == "cosine")
         {
             _importanceSampling = COSINE_SAMPLING;
@@ -467,12 +463,10 @@ void SceneLoader::executeCommand(
     }
     else if (command == "gamma")
     {
-
         _gamma = std::stof(arguments[0]);
     }
     else
     {
-
         std::cerr << "Unknown command in scene file: '" << command << "'" << std::endl;
     }
 }
@@ -669,6 +663,10 @@ Scene *SceneLoader::commitSceneData()
     scene->russianRoulette = _russianRoulette;
     scene->importanceSampling = _importanceSampling;
     scene->gamma = _gamma;
+
+    // volumetric data
+    scene->volumeMap = _volumeMap;
+    scene->defaultVolume = _defaultVolume;
 
     return scene;
 }

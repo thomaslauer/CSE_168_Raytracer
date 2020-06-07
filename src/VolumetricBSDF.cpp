@@ -12,6 +12,8 @@ glm::vec3 VolumetricBSDF::brdf(
     glm::vec3 w_out,
     material_t material)
 {
+    return glm::vec3(1);
+    /*
     float ior_in;
     float ior_out;
 
@@ -67,6 +69,7 @@ glm::vec3 VolumetricBSDF::brdf(
         // TODO: also add brsf here, switching for backfaces
         return glm::vec3(1) * absdot(w_out, normal);
     }
+    */
 }
 
 glm::vec3 VolumetricBSDF::importanceSample(
@@ -85,20 +88,22 @@ glm::vec3 VolumetricBSDF::importanceSample(
     float theta = glm::atan(material.roughness * glm::sqrt(epsilon1), glm::sqrt(1 - epsilon1));
     float phi = TWO_PI * epsilon2;
 
+    volume_t hitVolume = _scene->volumeMap[material.volumeID];
+
     glm::vec3 halfVector = sphereCoordsToVector(theta, phi, normal);
 
-    f = fresnelIOR(w_out, halfVector, material.ior, 1.0f);
+    f = fresnelIOR(w_out, halfVector, hitVolume.ior, 1.0f);
 
     if (glm::dot(w_out, halfVector) < 0)
     {
         // back face hit
-        w_in_refraction = calculateRefraction(-halfVector, w_out, material.ior, 1.0f);
+        w_in_refraction = calculateRefraction(-halfVector, w_out, hitVolume.ior, 1.0f);
         pdfNormalization = absdot(w_in_refraction, normal);
         return w_in_refraction;
     }
 
     // front face hit
-    w_in_refraction = calculateRefraction(halfVector, w_out, 1.0f, material.ior);
+    w_in_refraction = calculateRefraction(halfVector, w_out, 1.0f, hitVolume.ior);
     w_in_reflection = glm::reflect(-w_out, halfVector);
 
     glm::vec3 retval;

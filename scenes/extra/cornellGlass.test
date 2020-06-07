@@ -12,6 +12,10 @@ gamma 2.2
 
 maxdepth 10
 
+# define volume types
+volumetype air 1  0 0 0  0 0 0
+volumetype glass 1.5  0 0 0  0 0 0
+defaultvolume air
 
 maxverts 4
 #planar face
@@ -88,10 +92,7 @@ popTransform
 
 pushTransform
 brdf volumetric
-
-diffuse 0 0 0
-specular 0.9 0.9 0.9
-ior 2
+volume glass
 
 translate 0 1 0
 roughness 0.01

@@ -49,22 +49,11 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
             hitMaterial,
             origin,
             numBounces + 1);
-
-        outputColor += hitMaterial.emission;
     }
 
     return outputColor;
 }
 
-/**
- * Computes the indirect lighting by recursively tracing relflected rays.
- *
- * @param position Where light is being sampled.
- * @param normal The surface normal vector.
- * @param material The object material.
- * @param origin The origin or eye position of the ray which hit the object.
- * @param numBounces The depth of the recursion, used as the end condition when Russian Roulette is disabled.
- */
 glm::vec3 VolumetricPathTracerIntegrator::indirectLighting(
     glm::vec3 position,
     glm::vec3 normal,
