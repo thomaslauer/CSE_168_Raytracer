@@ -17,7 +17,7 @@ volumetype air 1  1  0 0 0  -1 0
 volumetype ceramic 0  1.5  6 9 10  0.1 0
 defaultvolume air
 
-maxdepth 10
+maxdepth 100
 
 maxverts 50005
 
