@@ -46,7 +46,7 @@ private:
     glm::vec3 _curAttenuation = glm::vec3(1.0f, 0.0f, 0.0f);
 
     std::string _defaultVolume;
-    std::map<std::string, volume_t> _volumeMap;
+    std::vector<volume_t> _volumeList;
 
     material_t _curMaterial = {
         glm::vec3(0.0f),             // diffuse
@@ -388,7 +388,7 @@ void SceneLoader::executeCommand(
         curVolume.meanScatterDistance = std::stof(arguments[6]);
         curVolume.scatterDirectionality = std::stof(arguments[7]);
 
-        _volumeMap[id] = curVolume;
+        _volumeList.push_back(curVolume);
     }
     else if (command == "volume")
     {
@@ -667,7 +667,7 @@ Scene *SceneLoader::commitSceneData()
     scene->gamma = _gamma;
 
     // volumetric data
-    scene->volumeMap = _volumeMap;
+    scene->volumeList = _volumeList;
     scene->defaultVolume = _defaultVolume;
 
     return scene;

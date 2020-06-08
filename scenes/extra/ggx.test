@@ -1,6 +1,6 @@
 size 1280 280
-integrator pathtracer
-spp 6400
+integrator volumetricpathtracer
+spp 64
 gamma 2.2
 importancesampling brdf
 nexteventestimation on
@@ -8,10 +8,12 @@ russianroulette on
 camera  0 2 15  0 -3 2.5  0 1 0  13
 output ggx.png
 
-maxdepth -1
+maxdepth 15
 
-
-maxverts 8
+# define volume types
+volumetype air 1  1  0 0 0  -1 0
+volumetype glass 0  1.5  1 1 0  0.05 0
+defaultvolume air
 
 vertex -20 -4 -2
 vertex -20 -4 20
@@ -44,38 +46,24 @@ tri 5 6 7
 
 # sphere default material settings
 brdf volumetric
-ior 1.5
-diffuse 0.5 0.5 0.5
-specular 0.5 0.5 0.5
+volume glass
 roughness 0.5
 
-diffuse 0 0 0
-specular 0.9 0.2 0.07
 roughness 0.25
 sphere -5.27 -3 2.5  1
 
-diffuse 0 0 0
-specular 0.9 0.2 0.07
 roughness 0.05
 sphere -3.14 -3 2.5  1
 
-diffuse 0 0.55 0.1
-specular 0.1 0.1 0.1
 roughness 0.12
 sphere -1.04 -3 2.5  1
 
-diffuse 0.01 0.01 0.4
-specular 0.02 0.02 0.02
 roughness 0.01
 sphere 1.04 -3 2.5  1
 
-diffuse 0 0 0
-specular 0 0 0
 roughness 0.01
 sphere 3.14 -3 2.5  1
 
-diffuse 0 0 0
-specular 1 0.17 0.1
 roughness 0.7
 sphere 5.27 -3 2.5  1
 

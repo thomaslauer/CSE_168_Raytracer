@@ -93,15 +93,29 @@ float absdot(glm::vec3 a, glm::vec3 b)
     return glm::abs(glm::dot(a, b));
 }
 
+volume_t findVolumeByID(Scene *scene, std::string id)
+{
+    for (volume_t v : scene->volumeList)
+    {
+        if (v.id == id)
+        {
+            return v;
+        }
+    }
+
+    std::cout << "couldn't find volume with id " << id << std::endl;
+    return scene->volumeList[0];
+}
+
 volume_t highestPriorityVolume(Scene *scene, std::set<std::string> volumes)
 {
     volume_t bestVolume;
     bool first = true;
 
-    for (std::string id : volumes)
+    for (volume_t v : scene->volumeList)
     {
-        volume_t v = scene->volumeMap[id];
-
+        if (volumes.find(v.id) == volumes.end())
+            continue;
         if (first || v.priority < bestVolume.priority)
         {
             bestVolume = v;

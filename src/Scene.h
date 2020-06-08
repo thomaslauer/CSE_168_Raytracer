@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vector>
-#include <map>
 #include <limits>
 
 #include <glm/glm.hpp>
@@ -99,7 +98,7 @@ public:
     std::vector<pointLight_t> pointLights;
     std::vector<quadLight_t> quadLights;
 
-    std::map<std::string, volume_t> volumeMap;
+    std::vector<volume_t> volumeList;
     std::string defaultVolume;
 
     Integrator *integrator;

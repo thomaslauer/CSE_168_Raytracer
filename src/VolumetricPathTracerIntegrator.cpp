@@ -62,6 +62,8 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
 
 glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, std::set<std::string> &volumes, int numBounces)
 {
+    if (numBounces > _scene->maxDepth)
+        return glm::vec3(0);
     glm::vec3 hitPosition;
     glm::vec3 hitNormal;
 
@@ -107,11 +109,7 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
 
     float pdfNormalization = 1.0f / FOUR_PI;
 
-    glm::vec3 scatteredLight;
-    if (numBounces > _scene->maxDepth)
-        scatteredLight = glm::vec3(0);
-    else
-        scatteredLight = traceRay(hitPosition, newDirection, volumes, numBounces + 1);
+    glm::vec3 scatteredLight = traceRay(hitPosition, newDirection, volumes, numBounces + 1);
 
     return attenuate(scatteredLight, t, volume);
 }

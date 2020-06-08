@@ -1,0 +1,31 @@
+size 480 480
+integrator volumetricpathtracer
+
+spp 100
+
+importancesampling brdf
+
+russianroulette on
+
+camera 0 0 5 0 1 0 0 0 0 45
+output bunny.png
+
+gamma 2.2
+
+maxdepth 10
+
+# define volume types
+volumetype air 1  1  0 0 0  -1 0
+volumetype ceramic 0  1.5  6 9 10  0.02 0
+defaultvolume air
+
+
+quadLight -0.25 1.999 -0.25 0 0 0.5  0.5 0 0  30 26 21
+
+brdf volumetric
+roughness 0.01
+volume ceramic
+
+
+obj ../res/bunny.obj
+

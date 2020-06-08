@@ -20,6 +20,7 @@ float fresnelIOR(glm::vec3 w_out, glm::vec3 normal, float ior_in, float ior_out)
 
 float absdot(glm::vec3 a, glm::vec3 b);
 
+volume_t findVolumeByID(Scene *scene, std::string id);
 volume_t highestPriorityVolume(Scene *scene, std::set<std::string> volumes);
 
 glm::vec3 attenuate(glm::vec3 T, float dist, volume_t volume);

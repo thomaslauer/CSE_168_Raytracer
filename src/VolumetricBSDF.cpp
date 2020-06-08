@@ -29,7 +29,7 @@ glm::vec3 VolumetricBSDF::importanceSample(
     float theta = glm::atan(material.roughness * glm::sqrt(epsilon1), glm::sqrt(1 - epsilon1));
     float phi = TWO_PI * epsilon2;
 
-    volume_t hitVolume = _scene->volumeMap[material.volumeID];
+    volume_t hitVolume = findVolumeByID(_scene, material.volumeID);
 
     glm::vec3 halfVector = sphereCoordsToVector(theta, phi, normal);
 
