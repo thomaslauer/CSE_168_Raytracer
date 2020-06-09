@@ -62,8 +62,6 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
 
 glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, std::set<std::string> &volumes, int numBounces)
 {
-    if (numBounces > _scene->maxDepth)
-        return glm::vec3(0);
     glm::vec3 hitPosition;
     glm::vec3 hitNormal;
 
@@ -74,17 +72,15 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
     // find the highest priority volume for the current ray
     volume_t volume = highestPriorityVolume(_scene, volumes);
 
-    float t = std::numeric_limits<float>::infinity();
-    if (volume.meanScatterDistance != -1)
-        t = -glm::log(gen(rng)) * volume.meanScatterDistance;
+    float t = -glm::log(gen(rng)) * volume.meanScatterDistance;
 
     float backfaceDistance = glm::length(hitPosition - origin);
 
-    if (hit && t > backfaceDistance)
+    if (hit && (volume.meanScatterDistance == -1 || t > backfaceDistance))
     {
         // calculate surface lighting
         if (hitMaterial.light || numBounces > _scene->maxDepth)
-            return attenuate(hitMaterial.emission, backfaceDistance, volume);
+            return attenuate(hitMaterial.emission * absdot(hitNormal, direction), backfaceDistance, volume);
         else
             return attenuate(indirectLighting(
                                  hitPosition,
@@ -96,20 +92,33 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
                              backfaceDistance, volume);
     }
 
+    if (numBounces > _scene->maxDepth)
+        return glm::vec3(0);
+
     // move hitPosition to the sampled location
     hitPosition = origin + t * direction;
 
     // todo: add sampling of scattering functions
     // sample random direction (not doing good scatting right now)
 
-    float theta = glm::acos(2 * gen(rng) - 1);
-    float phi = TWO_PI * gen(rng);
+    glm::vec3 newDirection;
+    float pdfNormalization;
 
-    glm::vec3 newDirection = sphereCoordsToVector(theta, phi, direction);
+    if (volume.scatterDirectionality != 0)
+    {
+        newDirection = hgScatter(direction, volume, pdfNormalization);
+    }
+    else
+    {
+        float theta = glm::acos(2 * gen(rng) - 1);
+        float phi = TWO_PI * gen(rng);
 
-    float pdfNormalization = 1.0f / FOUR_PI;
+        newDirection = sphereCoordsToVector(theta, phi, direction);
+        //pdfNormalization = 1;
+        pdfNormalization = 1.0f / FOUR_PI;
+    }
 
-    glm::vec3 scatteredLight = traceRay(hitPosition, newDirection, volumes, numBounces + 1);
+    glm::vec3 scatteredLight = traceRay(hitPosition, newDirection, volumes, numBounces + 1) * pdfNormalization;
 
     return attenuate(scatteredLight, t, volume);
 }
@@ -131,7 +140,7 @@ glm::vec3 VolumetricPathTracerIntegrator::indirectLighting(
         glm::vec3 w_in = importanceSample(normal, w_out, material, volumes, pdfNormalization);
 
         glm::vec3 f = brdf(normal, w_in, w_out, material);
-        glm::vec3 T = f * glm::abs(glm::dot(w_in, normal)) / pdfNormalization;
+        glm::vec3 T = f * absdot(w_in, normal) / pdfNormalization;
 
         //if(material.brdf == GGX_VOLUMETRIC) std::cout << glm::to_string(f) << glm::to_string(T) << std::endl;
 
@@ -177,48 +186,44 @@ glm::vec3 VolumetricPathTracerIntegrator::importanceSample(glm::vec3 normal, glm
 {
     glm::vec3 w_in;
 
-    float epsilon1 = gen(rng);
-    float epsilon2 = gen(rng);
-
-    float theta = 0;
-    float phi = 0;
-
-    //float k_s = averageVector(material.specular);
-    //float k_d = averageVector(material.diffuse);
-
-    glm::vec3 samplingSpaceCenter = normal;
-    //glm::vec3 reflection = (2 * glm::dot(normal, w_out) * normal - w_out);
-
-    if (_scene->importanceSampling == COSINE_SAMPLING)
-    {
-
-        theta = glm::acos(glm::sqrt(epsilon1));
-        phi = TWO_PI * epsilon2;
-
-        w_in = sphereCoordsToVector(theta, phi, samplingSpaceCenter);
-        pdfNormalization = glm::abs(glm::dot(normal, w_in)) / PI;
-    }
-    else if (_scene->importanceSampling == BRDF_SAMPLING)
-    {
-        if (material.brdf == GGX)
-            w_in = _ggxBRDF->importanceSample(normal, w_out, material, pdfNormalization);
-        else if (material.brdf == GGX_VOLUMETRIC)
-            w_in = _volumetricBSDF->importanceSample(normal, w_out, material, volumes, pdfNormalization);
-        else
-            w_in = _phongBRDF->importanceSample(normal, w_out, material, pdfNormalization);
-    }
+    if (material.brdf == GGX)
+        w_in = _ggxBRDF->importanceSample(normal, w_out, material, pdfNormalization);
+    else if (material.brdf == GGX_VOLUMETRIC)
+        w_in = _volumetricBSDF->importanceSample(normal, w_out, material, volumes, pdfNormalization);
     else
-    {
-        // hemisphere sampling
-        theta = glm::acos(epsilon1);
-        phi = TWO_PI * epsilon2;
-
-        w_in = sphereCoordsToVector(theta, phi, samplingSpaceCenter);
-
-        pdfNormalization = 1.0f / TWO_PI;
-    }
+        w_in = _phongBRDF->importanceSample(normal, w_out, material, pdfNormalization);
 
     return w_in;
+}
+
+glm::vec3 VolumetricPathTracerIntegrator::hgScatter(
+    glm::vec3 direction,
+    volume_t volume,
+    float &normalization)
+{
+    float g = volume.scatterDirectionality;
+    float g2 = g * g;
+
+    normalization = 1;
+    if (g == 1) return direction;
+    if (g == -1) return -direction;
+
+    float e1 = gen(rng);
+    float e2 = gen(rng);
+
+    float mu = 1 / (2 * g) + (1 + g2 - glm::pow((1 - g2) / (1 - g - 2 * g * e1), 2));
+    float theta = glm::acos(mu);
+    float phi = 2 * PI * e2;
+
+    glm::vec3 out = sphereCoordsToVector(theta, phi, direction);
+
+    // compute normalization
+
+    normalization = 0.5 * (1 - g2) / glm::pow(1 + g2 - 2 * g * mu, 3 / 2);
+
+    std::cout << g << " " << theta << " " << phi << " " << glm::to_string(out) << std::endl;
+
+    return out;
 }
 
 void VolumetricPathTracerIntegrator::setScene(Scene *scene)

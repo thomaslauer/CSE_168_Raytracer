@@ -182,6 +182,11 @@ private:
         std::set<std::string> &volumes,
         float &pdfNormalization);
 
+    glm::vec3 hgScatter(
+        glm::vec3 direction,
+        volume_t volume,
+        float &normalization);
+
 public:
     VolumetricPathTracerIntegrator();
     void setScene(Scene *scene);
