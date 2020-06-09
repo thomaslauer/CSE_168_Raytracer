@@ -2,10 +2,10 @@
 
 size 640 480
 integrator volumetricpathtracer
-spp 400
+spp 4000
 gamma 2.2
 importancesampling brdf
-russianroulette off
+russianroulette on
 camera  -8 6 14  -1 -1 0  0 1 0  45
 output dragon.png
 
@@ -15,18 +15,18 @@ quadLight  -5 20 15  0 -5 5  10 0 0  9 9 8
 # define volume types
 volumetype air 1  1  0 0 0  -1 0
 volumetype jade 0  1.5  9 3 1  -1 0
-#volumetype jade 0  1.5  5 3 1  1 0
+#volumetype jade 0  1.5  9 3 1  1 -0.5
+#volumetype jade 0  1.5  0.1 0.1 0.1  0.4 0.2
+#volumetype jade 0  1.5  0.1 0.1 0.1  -1 0
 defaultvolume air
 
-maxdepth 20
+maxdepth 100
 
 maxverts 50005
 
 brdf volumetric
 volume jade
-diffuse 0.08 0.4 0.005
 roughness 0.02
-specular 0.2 0.2 0.2
 
 vertex 0 0 0
 vertex  1.6831 3.0852 -0.9792

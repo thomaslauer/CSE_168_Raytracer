@@ -1,31 +1,55 @@
 size 480 480
 integrator volumetricpathtracer
 
-spp 100
+#spp 10000
+spp 500
 
 importancesampling brdf
 
 russianroulette on
 
-camera 0 0 5 0 1 0 0 0 0 45
-output bunny.png
+camera  0 7 16  -1 -1 0  0 1 0  45
+output bunny_scatter_forward.png
 
 gamma 2.2
 
-maxdepth 10
+maxdepth 400
+
+#quadLight  -5 10 -25  0 5 5  10 0 0  5 5 6
+#quadLight  -5 20 15  0 -5 5  10 0 0  9 9 8
+
+#quadLight  -1 1 1  0 2 0  1.5 0 1.5  50 50 50
+quadLight  -2 1 0  0 2 0  2 0 0   40 40 35
+quadLight  -1 10 1  0 -1 1  2 0 0  30 25 30
 
 # define volume types
 volumetype air 1  1  0 0 0  -1 0
-volumetype ceramic 0  1.5  6 9 10  0.02 0
+volumetype jade 0  1.5  5 3 1  0.5 0.9
 defaultvolume air
 
 
-quadLight -0.25 1.999 -0.25 0 0 0.5  0.5 0 0  30 26 21
+pushTransform
+
+brdf phong
+diffuse 0.46 0.46 0.46
+shininess 20
+specular 0 0 0
+
+scale 1000 1000 1000
+obj ../res/floor.obj
+
+popTransform
+
+
+pushTransform
+
+translate 0 0 5
+scale 5 5 5
 
 brdf volumetric
 roughness 0.01
-volume ceramic
-
+volume jade
 
 obj ../res/bunny.obj
 
+popTransform

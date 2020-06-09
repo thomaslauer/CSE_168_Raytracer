@@ -265,7 +265,6 @@ glm::vec3 PathTracerIntegrator::indirectLighting(
         glm::vec3 f = brdf(normal, w_in, w_out, material);
         glm::vec3 T = f * glm::abs(glm::dot(w_in, normal)) / pdfNormalization;
 
-
         if (_scene->russianRoulette)
         {
             float p = 1 - glm::min(glm::max(T.x, glm::max(T.y, T.z)), 1.0f);

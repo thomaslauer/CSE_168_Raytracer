@@ -128,8 +128,8 @@ volume_t highestPriorityVolume(Scene *scene, std::set<std::string> volumes)
 
 glm::vec3 attenuate(glm::vec3 T, float dist, volume_t volume)
 {
-    if (volume.absorbsion == glm::vec3(0))
+    if (volume.absorption == glm::vec3(0))
         return T;
 
-    return T * glm::exp(-volume.absorbsion * dist);
+    return T * glm::exp(-volume.absorption * dist);
 }

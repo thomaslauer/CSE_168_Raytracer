@@ -30,36 +30,6 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
     return traceRay(origin, direction, volumes, 0);
 }
 
-/*
-glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, std::set<std::string> &volumes, int numBounces)
-{
-    glm::vec3 outputColor = glm::vec3(0);
-
-    glm::vec3 hitPosition;
-    glm::vec3 hitNormal;
-
-    material_t hitMaterial;
-
-    bool hit = _scene->castRay(origin, direction, &hitPosition, &hitNormal, &hitMaterial);
-
-    if (hit)
-    {
-        if (hitMaterial.light || numBounces > _scene->maxDepth)
-            return hitMaterial.emission;
-
-        outputColor += indirectLighting(
-            hitPosition,
-            hitNormal,
-            hitMaterial,
-            origin,
-            volumes,
-            numBounces + 1);
-    }
-
-    return outputColor;
-}
-*/
-
 glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 direction, std::set<std::string> &volumes, int numBounces)
 {
     glm::vec3 hitPosition;
@@ -80,7 +50,12 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
     {
         // calculate surface lighting
         if (hitMaterial.light || numBounces > _scene->maxDepth)
-            return attenuate(hitMaterial.emission * absdot(hitNormal, direction), backfaceDistance, volume);
+        {
+            if (glm::dot(hitNormal, direction) < 0)
+                return attenuate(hitMaterial.emission * absdot(hitNormal, direction), backfaceDistance, volume);
+            else
+                return glm::vec3(0);
+        }
         else
             return attenuate(indirectLighting(
                                  hitPosition,
@@ -98,15 +73,13 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
     // move hitPosition to the sampled location
     hitPosition = origin + t * direction;
 
-    // todo: add sampling of scattering functions
-    // sample random direction (not doing good scatting right now)
-
     glm::vec3 newDirection;
     float pdfNormalization;
 
     if (volume.scatterDirectionality != 0)
     {
         newDirection = hgScatter(direction, volume, pdfNormalization);
+        //std::cout << pdfNormalization << std::endl;
     }
     else
     {
@@ -114,13 +87,12 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
         float phi = TWO_PI * gen(rng);
 
         newDirection = sphereCoordsToVector(theta, phi, direction);
-        //pdfNormalization = 1;
-        pdfNormalization = 1.0f / FOUR_PI;
+        pdfNormalization = 1;
     }
 
-    glm::vec3 scatteredLight = traceRay(hitPosition, newDirection, volumes, numBounces + 1) * pdfNormalization;
+    glm::vec3 scatteredLight = traceRay(hitPosition, newDirection, volumes, numBounces + 1);
 
-    return attenuate(scatteredLight, t, volume);
+    return attenuate(scatteredLight, t, volume) * pdfNormalization;
 }
 
 glm::vec3 VolumetricPathTracerIntegrator::indirectLighting(
@@ -177,7 +149,7 @@ inline glm::vec3 VolumetricPathTracerIntegrator::brdf(
     if (mat.brdf == GGX)
         return _ggxBRDF->brdf(surfaceNormal, w_in, w_out, mat);
     else if (mat.brdf == GGX_VOLUMETRIC)
-        return glm::vec3(1); // nothing ever gets absorbed
+        return glm::vec3(1);
     else
         return _phongBRDF->brdf(surfaceNormal, w_in, w_out, mat);
 }
@@ -205,23 +177,24 @@ glm::vec3 VolumetricPathTracerIntegrator::hgScatter(
     float g2 = g * g;
 
     normalization = 1;
-    if (g == 1) return direction;
-    if (g == -1) return -direction;
+    if (g == 1)
+        return direction;
+    if (g == -1)
+        return -direction;
 
     float e1 = gen(rng);
     float e2 = gen(rng);
 
-    float mu = 1 / (2 * g) + (1 + g2 - glm::pow((1 - g2) / (1 - g - 2 * g * e1), 2));
+    float s = 2 * e1 - 1;
+    float mu = (1 / (2 * g)) * (1 + g2 - glm::pow((1 - g2) / (1 + g * s), 2));
     float theta = glm::acos(mu);
+
     float phi = 2 * PI * e2;
 
     glm::vec3 out = sphereCoordsToVector(theta, phi, direction);
 
-    // compute normalization
 
-    normalization = 0.5 * (1 - g2) / glm::pow(1 + g2 - 2 * g * mu, 3 / 2);
-
-    std::cout << g << " " << theta << " " << phi << " " << glm::to_string(out) << std::endl;
+    normalization = 1 / FOUR_PI * (1 - g2) / glm::pow(1 + g2 - 2 * g * mu, 3/2);
 
     return out;
 }

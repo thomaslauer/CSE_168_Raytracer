@@ -1,20 +1,18 @@
 #Cornell Box
 size 480 480
 #size 2000 2000
-integrator pathtracer
-spp 250
+integrator volumetricpathtracer
+spp 400
 importancesampling brdf
-nexteventestimation on
-russianroulette on
+russianroulette off
 camera 0 1 3 0 1 0 0 1 0 45
-output cornellSuzanne.png
+output cornellTeacup.png
 gamma 2.2
 
-maxdepth 15
+maxdepth 40
 
-# define volume types
 volumetype air 1  1  0 0 0  -1 0
-volumetype glass 0  1.5  6 9 10  0.02 0
+volumetype ceramic 0  1.5  2 1 2  1 0
 defaultvolume air
 
 maxverts 4
@@ -91,16 +89,13 @@ tri 0 2 3
 popTransform
 
 pushTransform
-brdf ggx
-roughness 0.1
+rotate 0 1 0 20
 
-volume glass
+brdf volumetric
+volume ceramic
+roughness 0.2
+obj ../res/bunny.obj
 
-translate 0 0.7 0
-scale 0.5 0.5 0.5
-obj ../res/monkey.obj
 popTransform
-
-pushTransform
 
 popTransform

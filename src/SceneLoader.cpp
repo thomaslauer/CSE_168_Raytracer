@@ -199,50 +199,6 @@ void SceneLoader::executeCommand(
 
         tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filename.c_str());
 
-        /*
-        glm::vec3 minPosition = glm::vec3(0.0f);
-        glm::vec3 maxPosition = glm::vec3(0.0f);
-        bool first = true;
-
-        // this set of loops finds the min and max positions for each dimension
-        // I could definitely make this faster
-        for (size_t s = 0; s < shapes.size(); s++)
-        {
-            // Loop over faces(polygon)
-            size_t index_offset = 0;
-            for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++)
-            {
-                size_t fv = shapes[s].mesh.num_face_vertices[f];
-                // Loop over vertices in the face.
-                for (size_t v = 0; v < fv; v++)
-                {
-                    // access to vertex
-                    tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-                    for (size_t dim = 0; dim < 3; dim++) {
-                        tinyobj::real_t v = attrib.vertices[3 * idx.vertex_index + dim];
-
-                        if (v < minPosition[dim] || first) {
-                            minPosition[dim] = v;
-                        }
-                        if (v > maxPosition[dim] || first) {
-                            maxPosition[dim] = v;
-                        }
-                        first = false;
-                    }
-                }
-            }
-        }
-
-        // calculate the raw mesh size
-        glm::vec3 size = maxPosition - minPosition;
-        glm::vec3 center = (maxPosition + minPosition) / 2.0f;
-        float maximumDimension = glm::max(glm::max(size.x, size.y), size.z);
-
-        std::cout << glm::to_string(size) << " " << maximumDimension << std::endl;
-        std::cout << "min pos " << glm::to_string(minPosition) << std::endl;
-        std::cout << "max pos " << glm::to_string(maxPosition) << std::endl;
-        */
-
         // Loop over shapes
         for (size_t s = 0; s < shapes.size(); s++)
         {
@@ -265,9 +221,9 @@ void SceneLoader::executeCommand(
                     tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
                     tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
                     tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
-                    // tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
-                    // tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
-                    // tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
+                    tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
+                    tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
+                    tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
                     // tinyobj::real_t tx = attrib.texcoords[2 * idx.texcoord_index + 0];
                     // tinyobj::real_t ty = attrib.texcoords[2 * idx.texcoord_index + 1];
                     // Optional: vertex colors
@@ -277,16 +233,20 @@ void SceneLoader::executeCommand(
 
                     glm::vec3 rawVertex = glm::vec3(vx, vy, vz);
                     //rawVertex = (rawVertex - center) / maximumDimension;
-
+                    _curMaterial.triangleData.normals[v] = glm::vec3(nx, ny, nz);
                     _vertices.push_back(glm::vec3(curTransform * glm::vec4(rawVertex, 1.0f)));
                 }
                 index_offset += fv;
+
+                _curMaterial.triangleData.interpolate = true;
                 _triMaterials.push_back(_curMaterial);
 
                 // per-face material
                 shapes[s].mesh.material_ids[f];
             }
         }
+        // stop interpolating new materials
+        _curMaterial.triangleData.interpolate = false;
     }
     else if (command == "translate")
     {
@@ -384,7 +344,7 @@ void SceneLoader::executeCommand(
         curVolume.id = id;
         curVolume.priority = std::stoi(arguments[1]);
         curVolume.ior = std::stof(arguments[2]);
-        curVolume.absorbsion = loadVec3(arguments, 3);
+        curVolume.absorption = loadVec3(arguments, 3);
         curVolume.meanScatterDistance = std::stof(arguments[6]);
         curVolume.scatterDirectionality = std::stof(arguments[7]);
 

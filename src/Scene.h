@@ -36,7 +36,7 @@ struct volume_t
     std::string id;
     int priority;
     float ior;
-    glm::vec3 absorbsion;
+    glm::vec3 absorption;
     float meanScatterDistance;
     float scatterDirectionality;
 };
