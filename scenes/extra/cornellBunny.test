@@ -2,17 +2,17 @@
 size 480 480
 #size 2000 2000
 integrator volumetricpathtracer
-spp 400
+spp 5000
 importancesampling brdf
 russianroulette off
 camera 0 1 3 0 1 0 0 1 0 45
-output cornellTeacup.png
+output cornellBunny.png
 gamma 2.2
 
 maxdepth 40
 
-volumetype air 1  1  0 0 0  -1 0
-volumetype ceramic 0  1.5  2 1 2  1 0
+volumetype air 1  1  0.01 0.01 0.01  4 0.9
+volumetype ceramic 0  1.5  10 10 2  0.05 0
 defaultvolume air
 
 maxverts 4

@@ -40,19 +40,6 @@ bool Scene::castRay(
         {
             // hit a triangle
             *hitMaterial = triMaterials[rayHit.hit.primID];
-
-            if (hitMaterial->triangleData.interpolate)
-            {
-                //std::cout << rayHit.hit.u << " " << rayHit.hit.v << std::endl;
-                float u = rayHit.hit.u;
-                float v = rayHit.hit.v;
-
-                glm::vec3 a = hitMaterial->triangleData.normals[0];
-                glm::vec3 b = hitMaterial->triangleData.normals[1];
-                glm::vec3 c = hitMaterial->triangleData.normals[2];
-
-                *hitNormal = (1 - u - v) * a + u * b + v * c;
-            }
         }
         else
         {

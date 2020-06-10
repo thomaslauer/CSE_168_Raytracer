@@ -79,7 +79,6 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
     if (volume.scatterDirectionality != 0)
     {
         newDirection = hgScatter(direction, volume, pdfNormalization);
-        //std::cout << pdfNormalization << std::endl;
     }
     else
     {
@@ -92,7 +91,7 @@ glm::vec3 VolumetricPathTracerIntegrator::traceRay(glm::vec3 origin, glm::vec3 d
 
     glm::vec3 scatteredLight = traceRay(hitPosition, newDirection, volumes, numBounces + 1);
 
-    return attenuate(scatteredLight, t, volume) * pdfNormalization;
+    return attenuate(scatteredLight, t, volume);
 }
 
 glm::vec3 VolumetricPathTracerIntegrator::indirectLighting(
@@ -193,8 +192,7 @@ glm::vec3 VolumetricPathTracerIntegrator::hgScatter(
 
     glm::vec3 out = sphereCoordsToVector(theta, phi, direction);
 
-
-    normalization = 1 / FOUR_PI * (1 - g2) / glm::pow(1 + g2 - 2 * g * mu, 3/2);
+    normalization = 1 / FOUR_PI * (1 - g2) / glm::pow(1 + g2 - 2 * g * mu, 3 / 2);
 
     return out;
 }
